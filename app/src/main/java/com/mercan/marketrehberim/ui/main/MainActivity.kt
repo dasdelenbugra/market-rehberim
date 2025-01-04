@@ -5,15 +5,22 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mercan.marketrehberim.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
+    private lateinit var navHostFragment: NavHostFragment
+    private lateinit var bottomNavigationView: BottomNavigationView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindingCodes()
         defaultActivityCodes()
+        bindViews()
     }
 
     private fun bindingCodes() {
@@ -28,5 +35,14 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
+
+    private fun bindViews() {
+        navHostFragment = supportFragmentManager.findFragmentById(
+            binding.fragmentContainerView.id
+        ) as NavHostFragment
+
+        bottomNavigationView = binding.bottomNavigationView
+        bottomNavigationView.setupWithNavController(navHostFragment.navController)
     }
 }
