@@ -1,0 +1,6 @@
+<resources>
+
+    <style name="Base.Theme.MarketRehberim" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="Theme.MarketRehberim" parent="Base.Theme.MarketRehberim" />
+</resources>
