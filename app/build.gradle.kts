@@ -55,4 +55,8 @@ dependencies {
 
     // Jsoup
     implementation(libs.jsoup)
+
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    ksp(libs.androidx.lifecycle.compiler)
 }
