@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 
-    id("com.google.devtools.ksp")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
 }
@@ -64,7 +63,7 @@ dependencies {
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    ksp(libs.androidx.lifecycle.compiler)
+    kapt(libs.androidx.lifecycle.compiler)
 
     // Hilt
     implementation(libs.hilt.android)
