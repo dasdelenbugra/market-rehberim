@@ -1,4 +1,4 @@
-package com.mercan.marketrehberim.ui.main
+package com.mercan.marketrehberim.ui.view.main
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

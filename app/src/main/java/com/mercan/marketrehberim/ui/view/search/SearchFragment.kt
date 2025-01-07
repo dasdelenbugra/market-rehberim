@@ -1,4 +1,4 @@
-package com.mercan.marketrehberim.ui.search
+package com.mercan.marketrehberim.ui.view.search
 
 import android.os.Bundle
 import android.view.LayoutInflater

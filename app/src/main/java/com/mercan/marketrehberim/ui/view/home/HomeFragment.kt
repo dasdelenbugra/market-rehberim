@@ -1,4 +1,4 @@
-package com.mercan.marketrehberim.ui.home
+package com.mercan.marketrehberim.ui.view.home
 
 import android.os.Bundle
 import android.view.LayoutInflater
