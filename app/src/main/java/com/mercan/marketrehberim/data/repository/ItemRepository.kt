@@ -12,6 +12,12 @@ class ItemRepository @Inject constructor(
         val a101Items = itemRemoteSource.fetchA101(name).toMutableList()
         val erenlerItems = itemRemoteSource.fetchErenler(name).toMutableList()
 
-        return migrosItems + a101Items + erenlerItems
+        val returnList = mutableListOf<Item>().apply {
+            addAll(migrosItems)
+            addAll(a101Items)
+            addAll(erenlerItems)
+        }
+
+        return returnList.sortedBy { it.price.toDouble() }
     }
 }
