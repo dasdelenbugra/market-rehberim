@@ -14,12 +14,13 @@ import javax.inject.Inject
 class SearchViewModel @Inject constructor(
     private val itemRepository: ItemRepository,
 ) : ViewModel() {
-    private val _searchResults = MutableStateFlow<UIItemState>(UIItemState.Loading)
+    private val _searchResults = MutableStateFlow<UIItemState>(UIItemState.Idle)
     val searchResults: StateFlow<UIItemState> = _searchResults
 
     fun fetchItems(name: String) {
         viewModelScope.launch {
             try {
+                _searchResults.value = UIItemState.Loading
                 val items = itemRepository.getItems(name)
                 _searchResults.value = UIItemState.Success(items)
             } catch (e: Exception) {
