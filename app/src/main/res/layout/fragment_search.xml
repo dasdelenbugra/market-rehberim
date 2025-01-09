@@ -5,12 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
     tools:context=".ui.view.search.SearchFragment">
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="12dp"
         app:startIconDrawable="@drawable/ic_search_outlined">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -21,4 +21,12 @@
             android:inputType="text"
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="12dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 </LinearLayout>
