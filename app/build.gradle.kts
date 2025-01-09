@@ -65,4 +65,8 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
+
+    // Retrofit & Gson
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 }
