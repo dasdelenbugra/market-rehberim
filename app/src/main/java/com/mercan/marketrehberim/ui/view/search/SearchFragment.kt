@@ -80,6 +80,7 @@ class SearchFragment : Fragment(), View.OnFocusChangeListener {
     }
 
     override fun onFocusChange(v: View?, hasFocus: Boolean) {
+        if (hasFocus) return
         val itemName = etSearch.text.toString()
         searchViewModel.fetchItems(itemName)
     }
