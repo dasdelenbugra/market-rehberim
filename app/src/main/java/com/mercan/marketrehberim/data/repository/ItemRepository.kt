@@ -8,6 +8,10 @@ class ItemRepository @Inject constructor(
     private val itemRemoteSource: ItemRemoteSource,
 ) {
     suspend fun getItems(name: String): List<Item> {
-        return itemRemoteSource.fetchItems(name)
+        val migrosItems = itemRemoteSource.fetchMigros(name).toMutableList()
+        val a101Items = itemRemoteSource.fetchA101(name).toMutableList()
+        val erenlerItems = itemRemoteSource.fetchErenler(name).toMutableList()
+
+        return migrosItems + a101Items + erenlerItems
     }
 }
