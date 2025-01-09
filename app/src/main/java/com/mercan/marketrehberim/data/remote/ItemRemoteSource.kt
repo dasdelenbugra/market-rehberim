@@ -1,10 +1,16 @@
 package com.mercan.marketrehberim.data.remote
 
 import com.mercan.marketrehberim.data.model.Item
-import javax.inject.Inject
+import retrofit2.http.GET
+import retrofit2.http.Path
 
-class ItemRemoteSource @Inject constructor() {
-    suspend fun fetchItems(itemName: String): List<Item> {
-        return emptyList()
-    }
+interface ItemRemoteSource {
+    @GET("migros/{itemName}")
+    suspend fun fetchMigros(@Path("itemName") itemName: String): List<Item>
+
+    @GET("a101/{itemName}")
+    suspend fun fetchA101(@Path("itemName") itemName: String): List<Item>
+
+    @GET("erenler/{itemName}")
+    suspend fun fetchErenler(@Path("itemName") itemName: String): List<Item>
 }
