@@ -58,9 +58,6 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    // Jsoup
-    implementation(libs.jsoup)
-
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     kapt(libs.androidx.lifecycle.compiler)
