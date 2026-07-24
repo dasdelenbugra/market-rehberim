@@ -68,8 +68,8 @@ docker run -p 5454:5454 -e USE_MOCK=true market-rehberim-backend
 | `MOCK_FALLBACK`  | `true`    | Scraping başarısız olursa örnek veriye düş |
 | `REQUEST_TIMEOUT`| `10`      | HTTP istek zaman aşımı (sn) |
 
-> **Demo/portföy için** `USE_MOCK=true` önerilir: ağ ve site yapısına bağlı olmadan
-> her zaman tutarlı sonuç verir. Gerçek scraping'i denemek için `USE_MOCK=false` yapın
+> **Geliştirme ve testlerde** `USE_MOCK=true` önerilir: ağ ve site yapısına bağlı
+> olmadan her zaman tutarlı sonuç verir. Canlı scraping için `USE_MOCK=false` yapın
 > (seçiciler `app/scrapers/*.py` içinde güncellenebilir).
 
 ## API
@@ -137,6 +137,6 @@ pytest -q
 
 ## Yasal Not
 
-Gerçek scraping modu (`USE_MOCK=false`) yalnızca eğitim/portföy amaçlıdır. Üretimde
-hedef sitelerin kullanım şartlarına ve `robots.txt` kurallarına uyulmalıdır.
+Canlı scraping modu (`USE_MOCK=false`) kullanılırken hedef sitelerin kullanım
+şartlarına ve `robots.txt` kurallarına uyulmalıdır.
 ```

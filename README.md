@@ -170,5 +170,6 @@ MarketRehberim/
 ---
 
 ## 📄 Lisans / Not
-Eğitim ve portföy amaçlı geliştirilmiştir. Gerçek scraping modu kullanılırken hedef
-sitelerin kullanım şartlarına ve `robots.txt` kurallarına uyulmalıdır.
+MarketRehberim aktif olarak geliştirilen bir projedir. Gerçek scraping modu
+kullanılırken hedef sitelerin kullanım şartlarına ve `robots.txt` kurallarına
+uyulmalıdır.
