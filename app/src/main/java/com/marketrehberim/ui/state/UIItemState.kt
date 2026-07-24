@@ -1,6 +1,6 @@
-package com.mercan.marketrehberim.ui.state
+package com.marketrehberim.ui.state
 
-import com.mercan.marketrehberim.data.model.Item
+import com.marketrehberim.data.model.Item
 
 sealed class UIItemState {
     data object Idle : UIItemState()
