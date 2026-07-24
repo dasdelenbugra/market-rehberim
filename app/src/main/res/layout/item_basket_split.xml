@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  En ucuz dağıtımın tek satırı: hangi ürün, hangi marketten, kaça.
+  Önceden bunların hepsi tek bir TextView'a "süt → ŞOK (66.72 ₺)" diye
+  basılıyordu; taranamıyor ve rakamlar hizalanmıyordu.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="9dp">
+
+    <View
+        android:id="@+id/marketDot"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/shape_market_dot"
+        tools:backgroundTint="@color/market_sok" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="süt" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/market"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="ŞOK" />
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/price"
+        style="@style/TextAppearance.MarketRehberim.Price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        tools:text="38,50 ₺" />
+</LinearLayout>
