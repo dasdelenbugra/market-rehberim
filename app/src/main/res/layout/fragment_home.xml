@@ -1,18 +1,230 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:clipToPadding="false"
+    android:fillViewport="true"
     tools:context=".ui.view.home.HomeFragment">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabOpenCamera"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:contentDescription="Add a Photo"
-        android:src="@drawable/ic_add_a_photo_outlined"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingTop="16dp"
+        android:paddingBottom="24dp">
+
+        <!-- Üst satır: selam + şehir -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/app_name"
+                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                android:textColor="?attr/colorOnBackground"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCity"
+                style="@style/Widget.Material3.Button.TonalButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_location"
+                app:iconGravity="textStart"
+                tools:text="Tokat" />
+        </LinearLayout>
+
+        <!-- Tasarruf şeridi: uygulamanın vaadi (kazanç) ilk görülen şey.
+             Kayıt yoksa gizlenir — sıfırı "kazanç" diye göstermenin anlamı yok. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/savingsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    style="@style/TextAppearance.MarketRehberim.Overline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/savings_title" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvSavingsAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                    android:textColor="?attr/colorPrimary"
+                    android:textStyle="bold"
+                    tools:text="142,60 ₺" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvSavingsHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="8 aramada en ucuzu seçtin" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Gradient hero: kamera ile tara -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_hero_gradient"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_title"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:alpha="0.9"
+                    android:text="@string/home_subtitle"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/fabOpenCamera"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:backgroundTint="#FFFFFF"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
+                    android:text="@string/scan_with_camera"
+                    android:textColor="@color/hero_button_fg"
+                    app:cornerRadius="24dp"
+                    app:icon="@drawable/ic_add_a_photo_outlined"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/hero_button_fg" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Şehrindeki marketler: seçili şehirde karşılaştırılan marketler.
+             Şehir değişince güncellenir; kullanıcı kapsamı görsün diye burada. -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvMarketsTitle"
+            style="@style/TextAppearance.MarketRehberim.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/markets_in_city"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvMarketsHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/markets_hint"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/marketChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- Son Aramalar -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvRecentTitle"
+            style="@style/TextAppearance.MarketRehberim.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/recent_searches"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/recentChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
+
+        <!-- Favoriler -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvFavoritesTitle"
+            style="@style/TextAppearance.MarketRehberim.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/favorites" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/favoritesEmptyCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            tools:visibility="gone">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvFavoritesEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:text="@string/favorites_empty"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/favoritesList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clipToPadding="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/item_favorite" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

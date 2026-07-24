@@ -1,61 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Arama sonucu satırı.
+
+  Üç sütun: görsel · (ad + market) · (fiyat + fark). Fiyat farkı sütunu ekranın
+  en önemli bilgisi — "kaç lira fark var" hesabını kullanıcıdan alıp buraya taşır.
+  En ucuz satır ItemViewHolder tarafından yeşil konturla işaretlenir.
+-->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardUseCompatPadding="true">
+    android:layout_marginVertical="5dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:rippleColor="?attr/colorPrimary">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
 
-        <ImageView
+        <!-- Market fotoğrafları beyaz zeminli ve boşluklu gelir; centerCrop etiketi
+             kesiyordu. fitCenter ürünü olduğu gibi gösterir. -->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/image"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:contentDescription="Item Image"
-            android:scaleType="centerCrop"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="?attr/colorSurfaceContainerHighest"
+            android:contentDescription="@string/item_image_desc"
+            android:padding="4dp"
+            android:scaleType="fitCenter"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.MarketRehberim.Image" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/name"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            app:layout_constraintBottom_toTopOf="@id/price"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/image"
-            app:layout_constraintTop_toTopOf="@id/image" />
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/price"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleSmall"
-            app:layout_constraintBottom_toTopOf="@id/from"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/image"
-            app:layout_constraintTop_toBottomOf="@id/name" />
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Sütaş Günlük Süt 1 lt" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/from"
-            android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Marka rengi noktası: aynı renk filtre çiplerinde ve sepette tekrar eder -->
+                <View
+                    android:id="@+id/marketDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/shape_market_dot"
+                    tools:backgroundTint="@color/market_migros" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/from"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Migros" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvCheapest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_badge_accent"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="@string/cheapest_badge"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleSmall"
-            app:layout_constraintBottom_toBottomOf="@id/image"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/image"
-            app:layout_constraintTop_toBottomOf="@id/price" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_marginStart="10dp"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/price"
+                style="@style/TextAppearance.MarketRehberim.Price.Large"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                tools:text="38,50 ₺" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvDiff"
+                style="@style/TextAppearance.MarketRehberim.PriceDelta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:visibility="gone"
+                tools:text="+2,40 ₺"
+                tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
