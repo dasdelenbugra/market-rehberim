@@ -1,3 +1,85 @@
 <resources>
     <string name="app_name">Market Rehberim</string>
+    <string name="empty_results">Sonuç bulunamadı. Farklı bir arama deneyin.</string>
+    <string name="search_hint">Ara</string>
+    <string name="no_photo">Fotoğraf alınamadı.</string>
+    <string name="no_object_detected">Nesne tanınamadı. Tekrar deneyin.</string>
+    <string name="recognition_failed">Tanıma sırasında hata oluştu.</string>
+    <string name="item_image_desc">Ürün görseli</string>
+    <string name="home_title">Market Rehberim</string>
+    <string name="home_subtitle">Ürünü kamerayla tara, en uygun fiyatı marketler arasında karşılaştır.</string>
+    <string name="scan_with_camera">Kamera ile Tara</string>
+    <string name="cheapest_badge">EN UCUZ</string>
+    <string name="all_markets">Tümü</string>
+    <string name="sort">Sırala</string>
+    <string name="favorite">Favori</string>
+    <string name="price_history">Fiyat Geçmişi</string>
+    <string name="add_to_favorites">Favorilere ekle</string>
+    <string name="added_to_favorites">Favorilere eklendi</string>
+    <string name="removed_from_favorites">Favorilerden çıkarıldı</string>
+    <string name="min_price">En düşük: %.2f ₺</string>
+    <string name="max_price">En yüksek: %.2f ₺</string>
+    <string name="product_detail">Ürün Detayı</string>
+    <string name="recent_searches">Son Aramalar</string>
+    <string name="favorites">Favoriler</string>
+    <string name="favorites_empty">Henüz favori eklemediniz. Bir ürüne dokunup favorilere ekleyin.</string>
+    <string name="select_city">Şehir Seç</string>
+    <string name="markets_in_city">Şehrindeki marketler</string>
+    <string name="markets_hint">Ulusal marketlerin yanında yerel marketlerin fiyatlarını da karşılaştırırız.</string>
+    <string name="basket_title">Sepetim</string>
+    <string name="basket_subtitle">Alışveriş listeni ekle, en ucuz marketi bul.</string>
+    <string name="basket_add_hint">Ürün ekle (ör. süt)</string>
+    <string name="add">Ekle</string>
+    <string name="optimize">En ucuzu bul</string>
+    <string name="optimal_split">En ucuz dağıtım (her ürün en ucuz markette)</string>
+    <string name="by_market">Tek markette sepet toplamı</string>
+    <string name="basket">Sepet</string>
+    <string name="nav_home">Anasayfa</string>
+    <string name="nav_search">Ara</string>
+    <string name="nav_basket">Sepet</string>
+    <string name="nav_report">Fiyat Bildir</string>
+    <string name="report_title">Fiyat Bildir</string>
+    <string name="report_subtitle">Yerel marketteki raf etiketini fotoğrafla; fiyatı otomatik okuyup topluluğa ekleyelim.</string>
+    <string name="capture_label">Raf etiketini çek</string>
+    <string name="product_name_hint">Ürün adı</string>
+    <string name="price_hint">Fiyat</string>
+    <string name="submit_price">Gönder</string>
+    <string name="ocr_failed">Fiyat okunamadı, elle girebilirsiniz.</string>
+    <string name="fill_all_fields">Lütfen market, ürün ve fiyatı doldurun.</string>
+    <string name="price_submitted">Teşekkürler! Fiyat gönderildi.</string>
+    <string name="price_submit_failed">Gönderilemedi, tekrar deneyin.</string>
+    <string name="market">Market</string>
+
+    <!-- Arama sonuçları -->
+    <string name="price_diff">+%.2f ₺</string>
+    <string name="search_status_loading">%s · marketler taranıyor…</string>
+    <string name="search_meta">%1$s · %2$d sonuç · en ucuz %3$.2f ₺</string>
+
+    <!-- Tasarruf takibi -->
+    <string name="savings_title">Bu ay kazandığın</string>
+    <string name="savings_amount">%.2f ₺</string>
+    <string name="savings_hint">%d aramada en ucuzu seçtin</string>
+
+    <!-- Sepet -->
+    <string name="basket_empty">Listeye ürün ekle; hangi markette ne kadara geldiğini ve
+        en ucuz dağılımı gösterelim.</string>
+    <string name="basket_savings">%1$.2f ₺ tasarruf · %2$d markete uğra</string>
+    <string name="basket_savings_single">%1$.2f ₺ tasarruf · tek markette</string>
+    <string name="basket_split_title">Hangi ürün nereden</string>
+    <string name="not_found">bulunamadı</string>
+
+    <!-- Ürün detayı -->
+    <string name="back">Geri</string>
+    <string name="in_markets">Marketlerde</string>
+    <string name="cheaper_by">%.2f ₺ daha ucuz</string>
+    <string name="add_to_basket">Sepet listeme ekle</string>
+    <string name="added_to_basket">Sepet listene eklendi</string>
+    <string name="already_in_basket">Zaten sepet listende</string>
+
+    <!-- Fiyat takibi (bildirim) -->
+    <string name="channel_price_drop">Fiyat düşüşü</string>
+    <string name="channel_price_drop_desc">Favori ürünlerin ucuzladığında haber verir.</string>
+    <string name="price_drop_title">%s ucuzladı</string>
+    <string name="price_drop_text">%1$s · şimdi %2$.2f ₺ (%3$.2f ₺ düştü)</string>
+    <string name="price_watch_on">Bu ürün ucuzlayınca haber vereceğiz.</string>
 </resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Üretimde tüm trafik HTTPS olmalıdır (bulut backend https sağlar). Şifresiz (cleartext)
+  trafiğe yalnızca yerel geliştirme adreslerinde izin verilir: emülatörden host makineye
+  erişim (10.0.2.2) ve localhost.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
