@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Koyu temada hero degradesi: açık temadaki tonlar koyu zeminde fazla parlıyordu.
+     Beyaz metin ve beyaz buton bu tonlarda da kontrastı koruyor. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="135"
+        android:startColor="#18693A"
+        android:centerColor="#125430"
+        android:endColor="#0B3B21"
+        android:type="linear" />
+    <corners android:radius="24dp" />
+</shape>

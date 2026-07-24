@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ürün görselini yuvarlak köşeli göstermek için -->
+    <style name="ShapeAppearance.MarketRehberim.Image" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+
+    <!-- Genel kart: tek yarıçap (20dp), tonal yüzey, gölgesiz.
+         Önceden 18/20/22/24/28dp karışıktı; derinlik artık tonla kuruluyor. -->
+    <style name="Widget.MarketRehberim.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainerLow</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+
+    <!-- Alt gezinme çubuğu -->
+    <style name="Widget.MarketRehberim.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">?attr/colorSurfaceContainer</item>
+        <item name="elevation">0dp</item>
+        <item name="itemActiveIndicatorStyle">
+            @style/Widget.MarketRehberim.BottomNav.Indicator
+        </item>
+        <item name="itemIconTint">@color/bottom_nav_item_color</item>
+        <item name="itemTextColor">@color/bottom_nav_item_color</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="itemTextAppearanceActive">?attr/textAppearanceLabelMedium</item>
+        <item name="itemTextAppearanceInactive">?attr/textAppearanceLabelMedium</item>
+    </style>
+
+    <style name="Widget.MarketRehberim.BottomNav.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/colorPrimaryContainer</item>
+    </style>
+
+    <!-- Bölüm başlığı -->
+    <style name="TextAppearance.MarketRehberim.Section" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+
+    <!-- Ekran başlığı — her ekranda aynı kalıp -->
+    <style name="TextAppearance.MarketRehberim.ScreenTitle" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+
+    <!-- Fiyat: sabit genişlikli rakam. Karşılaştırma uygulamasında rakamların
+         alt alta hizalanması okunurluğun yarısı. -->
+    <style name="TextAppearance.MarketRehberim.Price" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorSecondary</item>
+    </style>
+
+    <style name="TextAppearance.MarketRehberim.Price.Large" parent="TextAppearance.MarketRehberim.Price">
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <!-- Fiyat farkı / ikincil sayısal bilgi -->
+    <style name="TextAppearance.MarketRehberim.PriceDelta" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Küçük başlık etiketi (UPPERCASE, harf aralıklı) -->
+    <style name="TextAppearance.MarketRehberim.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+</resources>

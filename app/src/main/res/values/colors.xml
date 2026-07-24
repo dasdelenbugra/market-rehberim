@@ -1,2 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <!-- ============ Açık tema — Material 3 tonal palet ============ -->
+    <!-- Marka: taze yeşil + fiyat için sıcak turuncu aksan -->
+    <color name="primary">#2E7D32</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#AEF0A6</color>
+    <color name="on_primary_container">#00210A</color>
+
+    <color name="secondary">#B83A16</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#FFDBCF</color>
+    <color name="on_secondary_container">#3B0A00</color>
+
+    <color name="tertiary">#8A6D00</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="tertiary_container">#FFE08B</color>
+    <color name="on_tertiary_container">#2B2000</color>
+
+    <!-- Zemin: düz beyaz değil, hafif yeşil tonlu yumuşak bir yüzey -->
+    <color name="background">#F6FAF1</color>
+    <color name="on_background">#181D16</color>
+    <color name="surface">#F6FAF1</color>
+    <color name="on_surface">#181D16</color>
+    <color name="surface_variant">#DDE5D6</color>
+    <color name="on_surface_variant">#414940</color>
+    <color name="outline">#717970</color>
+    <color name="outline_variant">#C1C9BB</color>
+
+    <!-- Tonal yükseklik (derinlik) — kartlar/çubuklar bu tonlarla katmanlanır -->
+    <color name="surface_container_lowest">#FFFFFF</color>
+    <color name="surface_container_low">#F0F4EB</color>
+    <color name="surface_container">#EAEEE5</color>
+    <color name="surface_container_high">#E4E9DF</color>
+    <color name="surface_container_highest">#DEE3DA</color>
+
+    <!-- ============ Market marka renkleri ============ -->
+    <!-- Kimlik taşıdıkları için iki temada da aynı; values-night bunları geçersiz
+         kılmaz. Tek kaynak: MarketPalette.kt -->
+    <color name="market_a101">#E30613</color>
+    <color name="market_migros">#F58220</color>
+    <color name="market_sok">#E8BE00</color>
+    <color name="market_carrefour">#005CA9</color>
+    <color name="market_local">#12703C</color>
+
+    <!-- Hero kartındaki beyaz butonun metni. Degrade her iki temada da koyu yeşil
+         olduğundan bu renk de sabittir — @color/primary kullanılırsa koyu temada
+         açık yeşil metin beyaz butona düşer ve okunmaz. -->
+    <color name="hero_button_fg">#0E5C32</color>
+</resources>

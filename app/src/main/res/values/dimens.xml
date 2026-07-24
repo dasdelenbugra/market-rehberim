@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ekran kenar boşluğu — her ekranda aynı -->
+    <dimen name="screen_margin">18dp</dimen>
+    <!-- "En ucuz" satırın konturu -->
+    <dimen name="cheapest_stroke">2dp</dimen>
+    <!-- Filtre çiplerindeki marka rengi noktası -->
+    <dimen name="chip_dot_size">8dp</dimen>
+</resources>
