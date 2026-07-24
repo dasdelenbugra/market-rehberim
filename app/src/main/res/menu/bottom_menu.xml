@@ -3,10 +3,20 @@
     <item
         android:id="@+id/homeFragment"
         android:icon="@drawable/ic_home_selector"
-        android:title="Anasayfa" />
+        android:title="@string/nav_home" />
 
     <item
         android:id="@+id/searchFragment"
-        android:icon="@drawable/ic_search_outlined"
-        android:title="Ara" />
+        android:icon="@drawable/ic_search_selector"
+        android:title="@string/nav_search" />
+
+    <item
+        android:id="@+id/basketFragment"
+        android:icon="@drawable/ic_basket_selector"
+        android:title="@string/nav_basket" />
+
+    <item
+        android:id="@+id/crowdsourceFragment"
+        android:icon="@drawable/ic_report_selector"
+        android:title="@string/nav_report" />
 </menu>
