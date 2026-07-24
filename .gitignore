@@ -371,3 +371,10 @@ obj/
 ### AndroidStudio Patch ###
 
 !/gradle/wrapper/gradle-wrapper.jar
+# Yayın imzalama (repoya eklenmez)
+keystore.properties
+*.keystore
+*.jks
+
+# Claude Code
+.claude/
