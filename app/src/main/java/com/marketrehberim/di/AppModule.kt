@@ -1,6 +1,7 @@
-package com.mercan.marketrehberim.di
+package com.marketrehberim.di
 
-import com.mercan.marketrehberim.data.remote.ItemRemoteSource
+import com.marketrehberim.BuildConfig
+import com.marketrehberim.data.remote.ItemRemoteSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,7 +21,7 @@ object AppModule {
         val client = OkHttpClient.Builder().connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS).build()
 
-        return Retrofit.Builder().baseUrl("http://10.12.3.144:5454/").client(client)
+        return Retrofit.Builder().baseUrl(BuildConfig.BASE_URL).client(client)
             .addConverterFactory(GsonConverterFactory.create()).build()
     }
 
