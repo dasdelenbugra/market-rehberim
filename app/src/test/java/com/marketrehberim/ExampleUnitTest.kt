@@ -1,4 +1,4 @@
-package com.mercan.marketrehberim
+package com.marketrehberim
 
 import org.junit.Test
 
