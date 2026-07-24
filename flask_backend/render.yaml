@@ -1,0 +1,17 @@
+# Render.com tek tıkla deploy yapılandırması.
+# https://render.com → New → Blueprint → bu repoyu seç.
+services:
+  - type: web
+    name: market-rehberim-backend
+    runtime: python
+    rootDir: flask_backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: USE_MOCK
+        value: "true"
+      - key: MOCK_FALLBACK
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.12.4"
