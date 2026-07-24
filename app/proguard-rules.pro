@@ -1,21 +1,29 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Market Rehberim — R8/ProGuard kuralları
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Stack trace'lerde satır numaralarını koru
+-keepattributes SourceFile,LineNumberTable
+-keepattributes Signature,*Annotation*,EnclosingMethod,InnerClasses
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# --- Gson ile serialize/deserialize edilen modeller ---
+# Gson alan adlarını reflection ile kullandığından bu sınıflar obfuscate edilmemeli.
+-keep class com.marketrehberim.data.model.** { *; }
+-keep class com.marketrehberim.data.remote.dto.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# --- Retrofit ---
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+# Kotlin suspend fonksiyon dönüş tipleri için
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+
+# --- Gson (genel) ---
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+
+# --- ML Kit (görüntü etiketleme + metin tanıma) ---
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+
+# Room ve Hilt kendi consumer kurallarını sağlar; ek kural gerekmez.
