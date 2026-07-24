@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ürün detayındaki market karşılaştırma satırı. Ekranın işi tek fiyat göstermek
+  değil, aynı ürünün dört fiyatını yan yana göstermek — çubuk farkı okumadan
+  görünür kılar.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="9dp">
+
+    <View
+        android:id="@+id/marketDot"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/shape_market_dot"
+        tools:backgroundTint="@color/market_migros" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/market"
+        android:layout_width="76dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="Migros" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_weight="1"
+        android:max="100"
+        app:trackCornerRadius="4dp"
+        app:trackThickness="7dp"
+        tools:progress="86" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/price"
+        style="@style/TextAppearance.MarketRehberim.Price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="40,90 ₺" />
+</LinearLayout>
