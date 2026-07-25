@@ -378,3 +378,7 @@ keystore.properties
 
 # Claude Code
 .claude/
+
+# Flask backend yerel veritabanı (üretilir, repoya girmez)
+flask_backend/data.sqlite
+flask_backend/*.sqlite
