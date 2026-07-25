@@ -127,4 +127,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     kapt(libs.androidx.hilt.compiler)
+
+    // Konum — cihaz konumundan şehir tespiti (FusedLocationProvider)
+    implementation(libs.play.services.location)
 }

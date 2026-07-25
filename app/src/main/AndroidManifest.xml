@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Favori ürün ucuzladığında bildirim (Android 13+ çalışma anında sorar) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Şehri konumdan otomatik belirlemek için (yaklaşık konum yeterli) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".di.App"

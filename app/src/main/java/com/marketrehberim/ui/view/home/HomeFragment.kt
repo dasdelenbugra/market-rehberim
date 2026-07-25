@@ -1,12 +1,14 @@
 package com.marketrehberim.ui.view.home
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.google.mlkit.vision.common.InputImage
@@ -24,7 +27,10 @@ import com.marketrehberim.R
 import com.marketrehberim.data.model.Item
 import com.marketrehberim.data.remote.dto.MarketsDto
 import com.marketrehberim.databinding.FragmentHomeBinding
+import com.marketrehberim.databinding.ItemCityRowBinding
+import com.marketrehberim.databinding.SheetCityPickerBinding
 import com.marketrehberim.ui.adapter.FavoriteAdapter
+import com.marketrehberim.ui.viewmodel.CityDetection
 import com.marketrehberim.ui.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -46,6 +52,12 @@ class HomeFragment : Fragment() {
             if (bitmap != null) recognize(bitmap) else showMessage(getString(R.string.no_photo))
         }
 
+    private val requestLocation =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) detectCityFromLocation()
+            else showMessage(getString(R.string.location_permission_denied))
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -61,7 +73,7 @@ class HomeFragment : Fragment() {
         binding.favoritesList.adapter = favoriteAdapter
 
         binding.fabOpenCamera.setOnClickListener { takePicture.launch(null) }
-        binding.btnCity.setOnClickListener { showCityDialog() }
+        binding.btnCity.setOnClickListener { showCityPicker() }
 
         observeCity()
         observeMarkets()
@@ -133,17 +145,61 @@ class HomeFragment : Fragment() {
         binding.marketChips.addView(chip)
     }
 
-    private fun showCityDialog() {
+    private fun showCityPicker() {
         val cities = viewModel.cities.value
-        if (cities.isEmpty()) {
-            showMessage(getString(R.string.select_city))
-            return
+        val sheet = BottomSheetDialog(requireContext())
+        val sheetBinding = SheetCityPickerBinding.inflate(layoutInflater)
+        val current = viewModel.cityLabel.value
+
+        // Şehir listesi backend'den gelir; boşsa sheet sessizce boş görünmesin.
+        sheetBinding.tvCitiesEmpty.visibility = if (cities.isEmpty()) View.VISIBLE else View.GONE
+
+        cities.forEach { city ->
+            val row = ItemCityRowBinding.inflate(layoutInflater, sheetBinding.cityContainer, false)
+            row.tvCityLabel.text = city.label
+            row.ivSelected.visibility = if (city.label == current) View.VISIBLE else View.GONE
+            row.root.setOnClickListener {
+                viewModel.selectCity(city)
+                sheet.dismiss()
+            }
+            sheetBinding.cityContainer.addView(row.root)
         }
-        val labels = cities.map { it.label }.toTypedArray()
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.select_city)
-            .setItems(labels) { _, which -> viewModel.selectCity(cities[which]) }
-            .show()
+
+        sheetBinding.rowUseLocation.setOnClickListener {
+            sheet.dismiss()
+            onUseMyLocation()
+        }
+
+        sheet.setContentView(sheetBinding.root)
+        sheet.show()
+    }
+
+    // --- Konumdan şehir tespiti ---
+    private fun onUseMyLocation() {
+        val perm = Manifest.permission.ACCESS_COARSE_LOCATION
+        if (ContextCompat.checkSelfPermission(requireContext(), perm) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            detectCityFromLocation()
+        } else {
+            requestLocation.launch(perm)
+        }
+    }
+
+    private fun detectCityFromLocation() {
+        showMessage(getString(R.string.detecting_location))
+        lifecycleScope.launch {
+            when (val result = viewModel.detectCity()) {
+                is CityDetection.Selected ->
+                    showMessage(getString(R.string.city_detected, result.label))
+                is CityDetection.Unsupported ->
+                    showMessage(getString(R.string.city_unsupported, result.province))
+                CityDetection.Unavailable ->
+                    showMessage(getString(R.string.location_unavailable))
+                CityDetection.NoCityList ->
+                    showMessage(getString(R.string.city_list_unavailable))
+            }
+        }
     }
 
     // --- Son aramalar ---

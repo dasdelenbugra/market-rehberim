@@ -24,6 +24,14 @@
     <string name="favorites">Favoriler</string>
     <string name="favorites_empty">Henüz favori eklemediniz. Bir ürüne dokunup favorilere ekleyin.</string>
     <string name="select_city">Şehir Seç</string>
+    <string name="use_my_location">Konumumu kullan</string>
+    <string name="use_my_location_desc">Bulunduğun ili otomatik seç</string>
+    <string name="detecting_location">Konum belirleniyor…</string>
+    <string name="city_detected">%s seçildi</string>
+    <string name="city_unsupported">%s henüz desteklenmiyor. Listeden seç.</string>
+    <string name="location_unavailable">Konum alınamadı. Lütfen listeden seç.</string>
+    <string name="location_permission_denied">Konum izni verilmedi.</string>
+    <string name="city_list_unavailable">Şehir listesi yüklenemedi. İnternet bağlantını kontrol et.</string>
     <string name="markets_in_city">Şehrindeki marketler</string>
     <string name="markets_hint">Ulusal marketlerin yanında yerel marketlerin fiyatlarını da karşılaştırırız.</string>
     <string name="basket_title">Sepetim</string>

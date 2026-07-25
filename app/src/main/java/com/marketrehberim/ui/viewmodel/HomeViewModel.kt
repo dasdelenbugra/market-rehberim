@@ -3,6 +3,7 @@ package com.marketrehberim.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.marketrehberim.data.local.CityStore
+import com.marketrehberim.data.location.CityLocator
 import com.marketrehberim.data.model.Item
 import com.marketrehberim.data.remote.dto.CityDto
 import com.marketrehberim.data.remote.dto.MarketsDto
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,6 +27,7 @@ class HomeViewModel @Inject constructor(
     searchHistoryRepository: SearchHistoryRepository,
     savingsRepository: SavingsRepository,
     private val cityStore: CityStore,
+    private val cityLocator: CityLocator,
 ) : ViewModel() {
     val favorites: Flow<List<Item>> = favoritesRepository.favorites
     val recentSearches: Flow<List<String>> = searchHistoryRepository.recent
@@ -57,4 +60,33 @@ class HomeViewModel @Inject constructor(
     private fun loadMarkets() {
         viewModelScope.launch { _markets.value = itemRepository.markets(cityStore.cityKey) }
     }
+
+    /**
+     * Cihaz konumundan ili tespit edip desteklenen bir şehre eşler. Eşleşme
+     * varsa şehri seçer. İzin çağıran tarafta alınmış olmalıdır.
+     */
+    suspend fun detectCity(): CityDetection {
+        // Liste henüz gelmediyse "desteklenmiyor" demek yanıltıcı olur; ayrı durum.
+        val available = cities.value
+        if (available.isEmpty()) return CityDetection.NoCityList
+        val province = cityLocator.currentProvince() ?: return CityDetection.Unavailable
+        val match = available.firstOrNull {
+            it.label.normalizeTr() == province.normalizeTr() ||
+                it.key.normalizeTr() == province.normalizeTr()
+        } ?: return CityDetection.Unsupported(province)
+        selectCity(match)
+        return CityDetection.Selected(match.label)
+    }
+
+    private fun String.normalizeTr(): String = trim().lowercase(Locale("tr", "TR"))
+}
+
+/** Konumdan şehir tespitinin olası sonuçları. */
+sealed interface CityDetection {
+    data class Selected(val label: String) : CityDetection
+    data class Unsupported(val province: String) : CityDetection
+    data object Unavailable : CityDetection
+
+    /** Şehir listesi backend'den hiç gelmedi (ağ hatası vb.). */
+    data object NoCityList : CityDetection
 }
