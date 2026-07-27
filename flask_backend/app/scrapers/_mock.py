@@ -20,7 +20,9 @@ _STORE_FACTORS = {
     "Mopaş": 0.87,
 }
 
-_PLACEHOLDER_IMG = "https://placehold.co/200x200?text={label}"
+# `.png` uzantısı şart: uzantısız istek SVG döndürüyor, Glide ise SVG'yi
+# ek bir decoder olmadan çözemiyor ve resim sessizce boş kalıyor.
+_PLACEHOLDER_IMG = "https://placehold.co/200x200.png?text={label}"
 
 
 def _base_price(query: str) -> float:
