@@ -1,10 +1,16 @@
-"""Scraper kayıt tablosu.
+"""Scraper kayıt tablosu — EMEKLİ (deprecated).
 
-Endpoint anahtarı -> scraper örneği eşlemesi. Rotalar bu sözlük üzerinden
-çalışır, böylece yeni market eklemek tek satırlık bir kayıt işlemidir.
+Ulusal market fiyatları artık `app.sources.marketfiyati` üzerinden, kamuya
+açık ve mevzuat gereği paylaşılan veriden geliyor. Market sitelerini doğrudan
+kazımak TTK m.55 (haksız rekabet), sui generis veritabanı hakkı ve site kullanım
+şartları açısından risk taşıdığı için varsayılan olarak **kapalı**.
 
-`erenler` yerel bir markettir; geriye dönük uyumluluk için endpoint'i korunur,
-ancak yeni sürümde yerel market fiyatları öncelikle crowdsourced toplanır.
+Bu paket iki sebeple duruyor:
+  1. Eski `/migros/<ürün>` tarzı endpoint'ler hâlâ yanıt vermeli (eski istemci
+     sürümleri sahada). Kapalıyken bu uçlar mock/boş döner.
+  2. Yerel `erenler` gibi, açık izin alınabilecek küçük marketler için iskelet.
+
+Açmak için: ENABLE_LEGACY_SCRAPERS=true (yalnız yerel geliştirme).
 """
 from app.scrapers.migros import MigrosScraper
 from app.scrapers.a101 import A101Scraper
@@ -20,7 +26,7 @@ SCRAPERS = {
     "erenler": ErenlerScraper(),
 }
 
-# Ulusal (scraping ile veri gelen) marketlerin scraper anahtarları.
+# Geriye dönük uyumluluk için duruyor; `services.search()` artık kullanmıyor.
 NATIONAL_KEYS = ["migros", "a101", "sok", "carrefour"]
 
 __all__ = ["SCRAPERS", "NATIONAL_KEYS"]

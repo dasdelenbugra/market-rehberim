@@ -44,6 +44,13 @@ class BaseScraper(ABC):
         if Config.USE_MOCK:
             return self.mock_items(query)
 
+        # Doğrudan scraping varsayılan olarak kapalı (bkz. scrapers/__init__.py).
+        # Kapalıyken hiçbir market sitesine istek gitmez; eski endpoint'ler
+        # yine de 200 dönsün diye mock'a düşülür.
+        if not Config.ENABLE_LEGACY_SCRAPERS:
+            logger.debug("%s: scraping kapalı (ENABLE_LEGACY_SCRAPERS=false)", self.store_name)
+            return self.mock_items(query) if Config.MOCK_FALLBACK else []
+
         try:
             html = self._download(self.search_url(query))
             soup = BeautifulSoup(html, "lxml")
