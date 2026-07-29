@@ -44,6 +44,7 @@ class ProductDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _comparison.value = itemRepository
                 .search(cityStore.cityKey, item.name)
+                .items
                 .sortedBy { it.priceValue }
         }
     }

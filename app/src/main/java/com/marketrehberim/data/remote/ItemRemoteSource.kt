@@ -14,12 +14,17 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface ItemRemoteSource {
-    /** Şehir + ürün için birleşik arama (ulusal + crowdsourced). */
+    /**
+     * Şehir + ürün için birleşik arama (ulusal + crowdsourced).
+     *
+     * `Response<...>` döner çünkü gövdenin yanında `X-Data-Updated` başlığını da
+     * okuyoruz — ulusal fiyatların son indekslenme zamanı ("Son güncelleme" rozeti).
+     */
     @GET("search/{city}/{itemName}")
     suspend fun search(
         @Path("city") city: String,
         @Path("itemName") itemName: String,
-    ): List<Item>
+    ): Response<List<Item>>
 
     @GET("cities")
     suspend fun cities(): List<CityDto>

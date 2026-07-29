@@ -35,6 +35,13 @@ class SearchViewModel @Inject constructor(
     private var sortOrder: SortOrder = SortOrder.PRICE_ASC
     private var lastQuery: String = ""
 
+    /**
+     * Ulusal fiyatların son indekslenme zamanı (ISO 8601) — `X-Data-Updated`
+     * başlığından. Kaynak bildirmezse null; "Son güncelleme" satırı gizlenir.
+     */
+    var lastUpdatedIso: String? = null
+        private set
+
     fun fetchItems(name: String) {
         val query = name.trim()
         if (query.isEmpty()) return
@@ -43,7 +50,9 @@ class SearchViewModel @Inject constructor(
                 _searchResults.value = UIItemState.Loading
                 lastQuery = query
                 searchHistoryRepository.add(query)
-                rawItems = itemRepository.search(cityStore.cityKey, query)
+                val result = itemRepository.search(cityStore.cityKey, query)
+                rawItems = result.items
+                lastUpdatedIso = result.updatedAt
                 selectedMarket = null
                 _markets.value = rawItems.map { it.from }.distinct().sorted()
                 emitDisplayed()

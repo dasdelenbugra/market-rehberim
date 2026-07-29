@@ -11,6 +11,18 @@ import com.marketrehberim.data.remote.dto.PriceSubmission
 import javax.inject.Inject
 
 /**
+ * Arama sonucu: fiyat listesi + ulusal fiyatların son güncellenme zamanı.
+ *
+ * @param updatedAt `X-Data-Updated` başlığından gelen ISO 8601 metni; kaynak
+ *   bildirmezse (mock, ağ hatası, damga yok) `null`. "Son güncelleme" rozeti bunu
+ *   kullanır.
+ */
+data class SearchResult(
+    val items: List<Item> = emptyList(),
+    val updatedAt: String? = null,
+)
+
+/**
  * Uzak veri kaynağına erişim. Backend birleşik aramayı (ulusal + crowdsourced)
  * tek uçta topladığından istemci tarafında ayrı market çağrılarına gerek yoktur.
  * Ağ hataları yukarı sızmaz; boş sonuç döner.
@@ -18,8 +30,14 @@ import javax.inject.Inject
 class ItemRepository @Inject constructor(
     private val remote: ItemRemoteSource,
 ) {
-    suspend fun search(city: String, name: String): List<Item> =
-        runCatching { remote.search(city, name) }.getOrDefault(emptyList())
+    suspend fun search(city: String, name: String): SearchResult =
+        runCatching {
+            val response = remote.search(city, name)
+            SearchResult(
+                items = response.body().orEmpty(),
+                updatedAt = response.headers()["X-Data-Updated"],
+            )
+        }.getOrDefault(SearchResult())
 
     suspend fun cities(): List<CityDto> =
         runCatching { remote.cities() }.getOrDefault(emptyList())

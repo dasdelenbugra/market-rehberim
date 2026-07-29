@@ -51,7 +51,7 @@ class PriceWatchWorker @AssistedInject constructor(
         val oldPrice = favorite.priceValue
         if (oldPrice == Double.MAX_VALUE) return
 
-        val results = items.search(city, favorite.name)
+        val results = items.search(city, favorite.name).items
         if (results.isEmpty()) return
 
         // Yalnız aynı marketteki aynı ürün: başka bir marketin daha ucuz benzeri
