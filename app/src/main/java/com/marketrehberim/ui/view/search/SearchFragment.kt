@@ -179,6 +179,7 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         binding.emptyView.visibility = GONE
         binding.filterRow.visibility = GONE
         binding.tvResultMeta.visibility = GONE
+        binding.tvUpdated.visibility = GONE
     }
 
     /**
@@ -200,6 +201,7 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         binding.tvResultMeta.text =
             getString(R.string.search_status_loading, searchViewModel.cityLabel)
         binding.tvResultMeta.visibility = VISIBLE
+        binding.tvUpdated.visibility = GONE
     }
 
     private fun successLogic(items: List<Item>) {
@@ -219,7 +221,30 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
             if (searchViewModel.markets.value.isNotEmpty()) VISIBLE else GONE
 
         bindResultMeta(items)
+        bindUpdated(hasResults)
     }
+
+    /**
+     * "Son güncelleme: 25 Tem 03:10" — fiyatlar günlük tazelendiği için kullanıcı
+     * verinin ne kadar taze olduğunu görsün. Kaynak zaman bildirmezse (mock, ağ
+     * hatası) ya da sonuç yoksa gizli kalır; uydurma bir zaman göstermeyiz.
+     */
+    private fun bindUpdated(hasResults: Boolean) {
+        val iso = searchViewModel.lastUpdatedIso
+        if (!hasResults || iso.isNullOrBlank()) {
+            binding.tvUpdated.visibility = GONE
+            return
+        }
+        binding.tvUpdated.text = getString(R.string.search_updated, formatUpdated(iso))
+        binding.tvUpdated.visibility = VISIBLE
+    }
+
+    /** ISO 8601 ("2026-07-25T03:10:00") → "25 Tem 03:10". Ayrıştırılamazsa ham metin. */
+    private fun formatUpdated(iso: String): String = runCatching {
+        val tr = java.util.Locale("tr", "TR")
+        val parsed = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", tr).parse(iso)
+        java.text.SimpleDateFormat("d MMM HH:mm", tr).format(parsed!!)
+    }.getOrDefault(iso)
 
     /** "Tokat · 9 sonuç · en ucuz 38,50 ₺" — sayfa üstünde tek satırlık özet. */
     private fun bindResultMeta(items: List<Item>) {
@@ -241,6 +266,7 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         binding.etSearch.isEnabled = true
         binding.recyclerView.visibility = GONE
         binding.tvResultMeta.visibility = GONE
+        binding.tvUpdated.visibility = GONE
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 

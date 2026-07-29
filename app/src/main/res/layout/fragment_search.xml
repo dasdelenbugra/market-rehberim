@@ -88,6 +88,24 @@
         tools:text="Tokat · 9 sonuç · en ucuz 38,50 ₺"
         tools:visibility="visible" />
 
+    <!-- Fiyatlar günlük tazeleniyor; kullanıcı "bu anlık mı?" diye merak etmesin
+         diye kaynağın son indeksleme zamanını dürüstçe gösteririz. -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvUpdated"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:layout_marginBottom="2dp"
+        android:drawablePadding="4dp"
+        android:gravity="center_vertical"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:drawableStartCompat="@drawable/ic_schedule"
+        app:drawableTint="?attr/colorOnSurfaceVariant"
+        tools:text="Son güncelleme: 25 Tem 03:10"
+        tools:visibility="visible" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
