@@ -33,11 +33,16 @@ CarrefourSA) **ve** şehrinizdeki yerel marketlerde karşılaştırır, en ucuzu
 │      Android (MVVM)          │  ───────────────────▶   │      Flask Backend         │
 │                              │  /search/<şehir>/<ürün> │                            │
 │  Fragment → ViewModel        │  /basket/optimize       │  Route → Service           │
-│    → Repository → Retrofit   │  POST /prices (OCR)     │    ├─ Scraper (ulusal)     │
-│    → Room (favori/geçmiş)    │  /history/<market>/<ür> │    └─ SQLite (crowdsourced)│
-│  Hilt · Coroutines/Flow      │  ◀───────────────────   │  requests + BeautifulSoup  │
+│    → Repository → Retrofit   │  POST /prices (OCR)     │    ├─ marketfiyati.org.tr  │
+│    → Room (favori/geçmiş)    │  /history/<market>/<ür> │    │   (ulusal, resmî veri) │
+│  Hilt · Coroutines/Flow      │  ◀───────────────────   │    └─ SQLite (crowdsourced)│
 └──────────────────────────────┘                         └────────────────────────────┘
 ```
+
+> **Ulusal fiyatlar nereden geliyor?** Zincir marketlerin Perakende Yönetmeliği
+> uyarınca bildirmek zorunda olduğu ve TÜBİTAK BİLGEM tarafından kamuya açılan
+> veriden. Doğrudan site scraping'i kapatıldı — gerekçe ve alternatif kaynaklar:
+> [`flask_backend/docs/VERI_KAYNAGI.md`](flask_backend/docs/VERI_KAYNAGI.md)
 
 ### Android katmanları
 
@@ -53,8 +58,8 @@ CarrefourSA) **ve** şehrinizdeki yerel marketlerde karşılaştırır, en ucuzu
 
 ## 🧠 Öne Çıkan Teknik Detaylar
 
-- **Sunucu tarafı birleşik arama:** `/search/<şehir>/<ürün>` ulusal scraping + yerel
-  crowdsourced veriyi tek yanıtta toplar; istemci sadeleşir.
+- **Sunucu tarafı birleşik arama:** `/search/<şehir>/<ürün>` ulusal (resmî kaynak) +
+  yerel crowdsourced veriyi tek yanıtta toplar; istemci sadeleşir.
 - **Sepet optimizasyonu:** hem tek-market sepet toplamı hem ürün bazlı en ucuz dağıtım.
 - **Cihaz üstü yapay zekâ:** ML Kit görüntü etiketleme (nesne) + metin tanıma (OCR),
   fotoğraflar cihazdan çıkmaz.
@@ -63,14 +68,16 @@ CarrefourSA) **ve** şehrinizdeki yerel marketlerde karşılaştırır, en ucuzu
   bir kez favorileri yeniden arar; kayıtlı fiyatın altına inen ürün için bildirim
   gönderip referans fiyatı tazeler (aynı düşüş her gün tekrar bildirilmez).
   Bildirim izni açılışta değil, ilk favori eklenirken istenir.
-- **Sunucu tarafı önbellek:** ulusal scraping sonuçları süreç içi TTL önbelleğinde
-  (varsayılan 15 dk). Crowdsourced kısım önbelleğe alınmaz — kullanıcı gönderdiği
-  fiyatı anında görmeli. On ürünlük bir sepet optimizasyonu 40 scraping isteği
-  yerine önbellekten karşılanır.
+- **Sunucu tarafı önbellek:** ulusal sonuçlar süreç içi TTL önbelleğinde
+  (varsayılan 6 saat — kaynak zaten günlük tazeleniyor, daha sık sormak yeni veri
+  getirmez). Anahtar şehri içerir, çünkü kaynak şube bazlı fiyat döndürür.
+  Crowdsourced kısım önbelleğe alınmaz — kullanıcı gönderdiği fiyatı anında
+  görmeli. On ürünlük bir sepet optimizasyonu tek tek istek yerine önbellekten
+  karşılanır.
 - **Yaşam döngüsü güvenli akış:** `repeatOnLifecycle(STARTED)`; `ListAdapter`+`DiffUtil`.
 - **Yayına hazır:** R8 kod küçültme + kaynak küçültme, ağ güvenliği yapılandırması,
   yapılandırılabilir backend adresi (`BuildConfig.BASE_URL`), imzalama yapılandırması.
-- **Çift modlu backend:** gerçek scraping veya örnek veri; hata olursa otomatik fallback.
+- **Çift modlu backend:** gerçek kaynak veya örnek veri; hata olursa otomatik fallback.
 
 ---
 
@@ -164,12 +171,19 @@ MarketRehberim/
 - [x] ViewModel/saf mantık birim testleri
 - [ ] Kalıcı veritabanı (PostgreSQL) — Render'ın diski kalıcı olmadığı için
       crowdsourced veri yeniden deploy'da siliniyor
-- [ ] Gerçek scraper seçicilerinin canlı site yapısına göre güncellenmesi
+- [x] Ulusal fiyatların hukuken güvenli, resmî kaynağa taşınması
+- [ ] Ürün kartında "son güncelleme" rozeti (`MarketFiyatiSource.last_indexed`)
+- [ ] Kullanıcının gerçek konumuyla sorgu (şehir merkezi yerine en yakın şube)
 - [ ] Enstrümantasyon (UI) testleri
 
 ---
 
 ## 📄 Lisans / Not
-MarketRehberim aktif olarak geliştirilen bir projedir. Gerçek scraping modu
-kullanılırken hedef sitelerin kullanım şartlarına ve `robots.txt` kurallarına
-uyulmalıdır.
+MarketRehberim aktif olarak geliştirilen bir projedir. Ulusal market fiyatları,
+zincir marketlerin mevzuat gereği bildirdiği ve TÜBİTAK BİLGEM tarafından
+kamuoyuna açılan veriden alınır; market siteleri doğrudan kazınmaz. Kaynaklar ve
+sorumlu kullanım kuralları:
+[`flask_backend/docs/VERI_KAYNAGI.md`](flask_backend/docs/VERI_KAYNAGI.md)
+
+Market adları ve logoları ilgili şirketlerin tescilli markalarıdır; bu uygulama
+onlarla bağlantılı değildir.
