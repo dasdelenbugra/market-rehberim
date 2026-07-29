@@ -31,6 +31,12 @@ def health():
         {
             "status": "ok",
             "stores": list(SCRAPERS.keys()),
+            # Hangi kaynağın çalıştığını deploy sonrası tek bakışta görebilmek için.
+            "source": {
+                "national": "marketfiyati.org.tr",
+                "mock": Config.USE_MOCK,
+                "legacyScrapers": Config.ENABLE_LEGACY_SCRAPERS,
+            },
             # Önbelleğin gerçekten dolduğunu deploy sonrası görebilmek için.
             "cache": {"entries": cache.size(), "ttl": Config.SEARCH_CACHE_TTL},
         }
@@ -50,7 +56,14 @@ def markets(city: str):
 @api.get("/search/<city>/<path:item_name>")
 def search(city: str, item_name: str):
     items = services.search(city, item_name)
-    return jsonify([it.to_dict() for it in items])
+    response = jsonify([it.to_dict() for it in items])
+    # Fiyatlar günlük tazeleniyor; istemci "Son güncelleme" rozetini bundan çizer.
+    # Gövde şeması (List<Item>) sabit sözleşme olduğu için zaman damgası başlıkla
+    # taşınır — aynı önbellek girdisinden gelir, ek istek yok.
+    updated_at = services.national_updated_at(city, item_name)
+    if updated_at:
+        response.headers["X-Data-Updated"] = updated_at
+    return response
 
 
 @api.post("/prices")
