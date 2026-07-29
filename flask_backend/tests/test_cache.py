@@ -60,9 +60,9 @@ def test_arama_ulusal_kismi_onbellekten_okur(monkeypatch):
     calls = []
     original = services._fetch_national
 
-    def spy(name):
-        calls.append(name)
-        return original(name)
+    def spy(city, name):
+        calls.append((city, name))
+        return original(city, name)
 
     monkeypatch.setattr(services, "_fetch_national", spy)
 
@@ -71,22 +71,40 @@ def test_arama_ulusal_kismi_onbellekten_okur(monkeypatch):
     assert len(calls) == 1
 
 
-def test_farkli_sehir_ayni_urun_ulusali_tekrar_cekmez():
-    """Ulusal zincir fiyatları şehre göre değişmiyor; anahtar şehri içermemeli."""
+def test_farkli_sehir_ulusali_yeniden_ceker(monkeypatch):
+    """Ulusal kaynak şube bazlı fiyat döndürüyor → anahtar şehri içermeli.
+
+    Eskiden anahtar şehirden bağımsızdı ve İstanbul'da arayan kullanıcı
+    Tokat'ın önbelleğe alınmış fiyatlarını görüyordu.
+    """
     calls = []
     original = services._fetch_national
 
-    def spy(name):
-        calls.append(name)
-        return original(name)
+    def spy(city, name):
+        calls.append((city, name))
+        return original(city, name)
 
-    services._fetch_national = spy
-    try:
-        services.search("tokat", "ekmek")
-        services.search("istanbul", "ekmek")
-        assert len(calls) == 1
-    finally:
-        services._fetch_national = original
+    monkeypatch.setattr(services, "_fetch_national", spy)
+
+    services.search("tokat", "ekmek")
+    services.search("istanbul", "ekmek")
+    assert len(calls) == 2
+
+
+def test_sehir_adi_buyuk_harfle_gelse_de_ayni_onbellege_duser(monkeypatch):
+    """'İSTANBUL' ve 'istanbul' aynı şehir; iki ayrı önbellek kaydı olmamalı."""
+    calls = []
+    original = services._fetch_national
+
+    def spy(city, name):
+        calls.append((city, name))
+        return original(city, name)
+
+    monkeypatch.setattr(services, "_fetch_national", spy)
+
+    services.search("istanbul", "peynir")
+    services.search("İSTANBUL", "peynir")
+    assert len(calls) == 1
 
 
 def test_onbellekten_donen_liste_kirlenmiyor():

@@ -1,6 +1,6 @@
 """İş mantığı: arama toplama, sepet optimizasyonu, fiyat geçmişi.
 
-- Ulusal marketler scraping/mock ile;
+- Ulusal marketler marketfiyati.org.tr (kamuya açık kaynak) ile;
 - Yerel marketler crowdsourced (SQLite) veriyle birleştirilir.
 """
 from __future__ import annotations
@@ -8,32 +8,53 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timedelta
 
-from app import cache, db
+from app import cache, db, registry
 from app.models import Item
-from app.scrapers import SCRAPERS, NATIONAL_KEYS
+from app.sources import NATIONAL_SOURCE
 from config import Config
 
 
-def _fetch_national(name: str) -> list[Item]:
-    """Dört ulusal marketten scraping/mock sonuçları. Pahalı olan kısım budur."""
-    results: list[Item] = []
-    for key in NATIONAL_KEYS:
-        results.extend(SCRAPERS[key].fetch(name))
-    return results
+def _fetch_national(city: str, name: str) -> tuple[list[Item], str | None]:
+    """Şehir merkezine yakın zincir şubelerinin fiyatları + son güncelleme zamanı.
+
+    Pahalı olan kısım budur; sonucu `_national_cached` önbelleğe alır.
+    """
+    latitude, longitude = registry.coords_for(city)
+    return NATIONAL_SOURCE.fetch_with_meta(name, latitude, longitude)
+
+
+def _national_cached(city: str, name: str) -> tuple[list[Item], str | None]:
+    """Ulusal (fiyatlar, güncelleme) çiftini önbellekten döndürür.
+
+    Önbellek anahtarı **şehri de içerir**: kaynak şube bazlı fiyat döndürdüğü için
+    aynı zincirin fiyatı şehirden şehre değişebiliyor; eski şehirden bağımsız
+    anahtar yanlış sonuç verirdi. Fiyatlar ve güncelleme zamanı aynı girdide
+    tutulur — `search()` ile `national_updated_at()` tek çekimi paylaşır.
+    """
+    key = f"national:{registry.city_key(city)}:{name.strip().lower()}"
+    return cache.get_or_set(
+        key,
+        ttl=Config.SEARCH_CACHE_TTL,
+        producer=lambda: _fetch_national(city, name),
+    )
+
+
+def national_updated_at(city: str, name: str) -> str | None:
+    """Ulusal fiyatların son indekslenme zamanı (ISO metin) — 'son güncelleme' rozeti.
+
+    `search()` ile aynı önbellek girdisini okur; ek bir kaynak isteği yapmaz.
+    """
+    return _national_cached(city, name)[1]
 
 
 def search(city: str, name: str) -> list[Item]:
     """Bir şehir+ürün için ulusal ve yerel (crowdsourced) sonuçları birleştirir.
 
-    Ulusal kısım önbelleğe alınır (şehirden bağımsız — aynı ulusal zincir her
-    şehirde aynı fiyatı verir), yerel kısım her çağrıda tazeden okunur.
+    Ulusal kısım önbelleğe alınır (bkz. `_national_cached`). Yerel kısım her
+    çağrıda tazeden okunur — kullanıcı raf etiketini gönderdikten hemen sonra
+    kendi katkısını görmeli.
     """
-    key = f"national:{name.strip().lower()}"
-    national = cache.get_or_set(
-        key,
-        ttl=Config.SEARCH_CACHE_TTL,
-        producer=lambda: _fetch_national(name),
-    )
+    national, _ = _national_cached(city, name)
 
     # Önbellekten gelen liste paylaşılan bir nesne: kopyalanmadan üstüne
     # eklenirse sonraki isteklerde yerel sonuçlar birikir.

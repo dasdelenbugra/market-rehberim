@@ -1,13 +1,62 @@
 """Şehir ve market kaydı.
 
-Ulusal marketler her şehirde vardır (online mağaza/scraping ile). Yerel marketlerin
-çoğunun web sitesi yoktur; bunların fiyatları crowdsourced (kullanıcı katkısı) olarak
-toplanır. Kayıt, hangi şehirde hangi marketlerin karşılaştırılabileceğini tanımlar.
+Ulusal marketlerin fiyatı marketfiyati.org.tr'den (kamuya açık, mevzuat gereği
+bildirilen veri) şube konumuyla birlikte gelir; bu yüzden her şehrin bir merkez
+koordinatı var. Yerel marketlerin çoğunun web sitesi yoktur; bunların fiyatları
+crowdsourced (kullanıcı katkısı) olarak toplanır.
 """
 from __future__ import annotations
 
-# Ulusal marketler: scraping ile veri gelir, her şehirde geçerli sayılır.
-NATIONAL_MARKETS = ["Migros", "A101", "ŞOK", "CarrefourSA"]
+from app.text import fold
+
+# Ulusal marketler: marketfiyati.org.tr kapsamındaki zincirler.
+# Not: Kaynak, ilgili şehirde şubesi olmayan zinciri döndürmez — bu liste
+# "olabilecekler" kümesidir, aramanın gerçek sonucu değil.
+NATIONAL_MARKETS = [
+    "Migros",
+    "A101",
+    "BİM",
+    "ŞOK",
+    "CarrefourSA",
+    "Hakmar",
+    "Tarım Kredi",
+]
+
+# Şehir merkezi koordinatları (lat, lon). Ulusal kaynak konum bazlı sorgu
+# istiyor; kullanıcıdan konum izni almadan da anlamlı sonuç dönebilmek için
+# şehir merkezini kullanıyoruz. İstemci gerçek konum gönderirse o tercih edilir.
+CITY_COORDS: dict[str, tuple[float, float]] = {
+    "adana": (37.0000, 35.3213),
+    "ankara": (39.9334, 32.8597),
+    "antalya": (36.8969, 30.7133),
+    "bursa": (40.1826, 29.0665),
+    "gaziantep": (37.0662, 37.3833),
+    "istanbul": (41.0082, 28.9784),
+    "izmir": (38.4237, 27.1428),
+    "kayseri": (38.7312, 35.4787),
+    "konya": (37.8746, 32.4932),
+    "samsun": (41.2867, 36.3300),
+    "tokat": (40.3167, 36.5544),
+    "trabzon": (41.0027, 39.7168),
+}
+
+# Kayıtlı olmayan bir şehir gelirse Ankara merkez alınır (ülke ortasına yakın,
+# boş sonuç dönmektense makul bir varsayılan).
+DEFAULT_COORDS = CITY_COORDS["ankara"]
+
+
+def city_key(city: str) -> str:
+    """İstemciden gelen şehir adını kayıt anahtarına indirger.
+
+    "İzmir" / "izmir" / "IZMIR" / "İSTANBUL" hepsi aynı şehri göstermeli;
+    ayrıntı için bkz. `app.text.fold`.
+    """
+    return fold(city)
+
+
+def coords_for(city: str) -> tuple[float, float]:
+    """Şehir anahtarı için (enlem, boylam). Bilinmeyen şehirde varsayılan döner."""
+    return CITY_COORDS.get(city_key(city), DEFAULT_COORDS)
 
 # Yerel marketler: web sitesi yok → yalnızca crowdsourced veri.
 # Şehir (küçük harf, TR karaktersiz anahtar) -> yerel market listesi.
@@ -49,10 +98,9 @@ def cities() -> list[dict]:
 
 def markets_for(city: str) -> dict[str, list[str]]:
     """Şehir için ulusal ve yerel market listelerini döndürür."""
-    city_key = (city or "").strip().lower()
     return {
         "national": list(NATIONAL_MARKETS),
-        "local": LOCAL_MARKETS.get(city_key, []),
+        "local": LOCAL_MARKETS.get(city_key(city), []),
     }
 
 
