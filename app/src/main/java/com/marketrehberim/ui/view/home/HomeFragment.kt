@@ -15,6 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -249,8 +250,23 @@ class HomeFragment : Fragment() {
             .addOnFailureListener { showMessage(getString(R.string.recognition_failed)) }
     }
 
+    /**
+     * Arama sekmesine geçip sorguyu çalıştırır.
+     *
+     * `NavOptions` şart: düz `navigate()` her çağrıda yığına yeni bir
+     * SearchFragment ekliyordu. Kullanıcı kamerayla üst üste üç ürün tarayınca
+     * geri tuşu anasayfaya değil, önceki arama ekranlarına dönüyordu —
+     * alt gezinme çubuğuyla varılan bir hedef için yanlış davranış.
+     *
+     * `restoreState` bilerek kapalı: sekmenin eski durumu geri yüklenirse yeni
+     * `query` argümanı yok sayılır ve tarama sonucu hiç aranmaz.
+     */
     private fun searchFor(query: String) {
-        findNavController().navigate(R.id.searchFragment, bundleOf("query" to query))
+        val options = NavOptions.Builder()
+            .setLaunchSingleTop(true)
+            .setPopUpTo(R.id.homeFragment, /* inclusive = */ false, /* saveState = */ true)
+            .build()
+        findNavController().navigate(R.id.searchFragment, bundleOf("query" to query), options)
     }
 
     private fun openDetail(item: Item) {
