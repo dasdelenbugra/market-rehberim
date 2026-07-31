@@ -42,9 +42,13 @@ class ProductDetailViewModel @Inject constructor(
      */
     fun loadComparison(item: Item) {
         viewModelScope.launch {
+            // Karşılaştırma yan bilgi: çekilemezse bölüm gizli kalır, detay
+            // ekranının kalanı (fiyat, favori, sepete ekle) çalışmaya devam eder.
             _comparison.value = itemRepository
                 .search(cityStore.cityKey, item.name)
-                .items
+                .getOrNull()
+                ?.items
+                .orEmpty()
                 .sortedBy { it.priceValue }
         }
     }

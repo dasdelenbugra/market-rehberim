@@ -1,51 +1,95 @@
 package com.marketrehberim.ui.viewmodel
 
 import com.marketrehberim.data.model.Item
+import com.marketrehberim.data.remote.dto.ProductGroup
+import com.marketrehberim.ui.state.SearchRow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
 
 class ResultShaperTest {
 
-    private fun item(name: String, price: String, from: String) =
+    private fun offer(from: String, price: String, name: String = "x") =
         Item(name = name, price = price, image = "", from = from)
 
+    /**
+     * @param relevance 0 = sorgunun asıl hedefi, 1 = yalnızca ilgili ürün.
+     */
+    private fun group(
+        name: String,
+        relevance: Int = ResultShaper.RELEVANCE_HEAD,
+        vararg offers: Item,
+    ): ProductGroup {
+        val sorted = offers.sortedBy { it.priceValue }
+        return ProductGroup(
+            name = name,
+            bestPrice = sorted.first().price,
+            bestMarket = sorted.first().from,
+            maxPrice = sorted.last().price,
+            marketCount = sorted.size,
+            relevance = relevance,
+            offers = sorted.map { it.copy(name = name) },
+        )
+    }
+
     private val sample = listOf(
-        item("Süt 1L", "38.50", "Migros"),
-        item("Ayran", "12.00", "A101"),
-        item("Peynir", "129.90", "Migros"),
+        group("Süt 1L", offers = arrayOf(offer("Migros", "38.50"), offer("A101", "35.00"))),
+        group("Ayran", offers = arrayOf(offer("A101", "12.00"))),
+        group("Peynir", offers = arrayOf(offer("Migros", "129.90"))),
     )
 
+    private fun names(rows: List<SearchRow>) =
+        rows.filterIsInstance<SearchRow.Product>().map { it.group.name }
+
+    private fun shape(
+        groups: List<ProductGroup>,
+        market: String? = null,
+        order: SortOrder = SortOrder.PRICE_ASC,
+        relatedExpanded: Boolean = false,
+    ) = ResultShaper.shape(groups, market, order, relatedExpanded)
+
     @Test
-    fun `market filtresi yoksa tum sonuclar doner`() {
-        val result = ResultShaper.shape(sample, market = null, order = SortOrder.PRICE_ASC)
-        assertEquals(3, result.size)
+    fun `market filtresi yoksa tum gruplar doner`() {
+        assertEquals(3, names(shape(sample)).size)
     }
 
     @Test
-    fun `market filtresi sadece o marketi birakir`() {
-        val result = ResultShaper.shape(sample, market = "Migros", order = SortOrder.PRICE_ASC)
-        assertEquals(listOf("Süt 1L", "Peynir"), result.map { it.name })
+    fun `market filtresi sadece o markete ait gruplari birakir`() {
+        assertEquals(listOf("Süt 1L", "Peynir"), names(shape(sample, market = "Migros")))
+    }
+
+    /**
+     * Filtre açıkken grup, seçilen marketin fiyatını göstermeli. Aksi halde
+     * "sadece Migros" seçiliyken satırda A101'in daha ucuz fiyatı yazardı.
+     */
+    @Test
+    fun `market filtresi grubun fiyatini o markete gore yeniden hesaplar`() {
+        val rows = shape(sample, market = "Migros")
+        val sut = rows.filterIsInstance<SearchRow.Product>().first { it.group.name == "Süt 1L" }
+        assertEquals("38.50", sut.group.bestPrice)
+        assertEquals("Migros", sut.group.bestMarket)
+        assertEquals(1, sut.group.marketCount)
     }
 
     @Test
     fun `fiyata gore artan siralar`() {
-        val result = ResultShaper.shape(sample, market = null, order = SortOrder.PRICE_ASC)
-        assertEquals(listOf("Ayran", "Süt 1L", "Peynir"), result.map { it.name })
+        assertEquals(listOf("Ayran", "Süt 1L", "Peynir"), names(shape(sample)))
     }
 
     @Test
     fun `fiyata gore azalan siralar`() {
-        val result = ResultShaper.shape(sample, market = null, order = SortOrder.PRICE_DESC)
-        assertEquals(listOf("Peynir", "Süt 1L", "Ayran"), result.map { it.name })
+        assertEquals(
+            listOf("Peynir", "Süt 1L", "Ayran"),
+            names(shape(sample, order = SortOrder.PRICE_DESC)),
+        )
     }
 
     /** Fiyatı çevrilemeyen kayıt listenin sonuna düşmeli, ortada kaybolmamalı. */
     @Test
     fun `okunamayan fiyat artan siralamada sona gider`() {
-        val withBad = sample + item("Bilinmeyen", "fiyat yok", "ŞOK")
-        val result = ResultShaper.shape(withBad, market = null, order = SortOrder.PRICE_ASC)
-        assertEquals("Bilinmeyen", result.last().name)
+        val withBad = sample + group("Bilinmeyen", offers = arrayOf(offer("ŞOK", "fiyat yok")))
+        assertEquals("Bilinmeyen", names(shape(withBad)).last())
     }
 
     /**
@@ -55,15 +99,17 @@ class ResultShaperTest {
     @Test
     fun `isim siralamasi turkce yerelde de ayni kalir`() {
         val default = Locale.getDefault()
-        val items = listOf(
-            item("Islak Mendil", "10.00", "A101"),
-            item("Ayran", "12.00", "A101"),
-            item("Zeytin", "50.00", "A101"),
+        val groups = listOf(
+            group("Islak Mendil", offers = arrayOf(offer("A101", "10.00"))),
+            group("Ayran", offers = arrayOf(offer("A101", "12.00"))),
+            group("Zeytin", offers = arrayOf(offer("A101", "50.00"))),
         )
         try {
             Locale.setDefault(Locale("tr", "TR"))
-            val result = ResultShaper.shape(items, market = null, order = SortOrder.NAME)
-            assertEquals(listOf("Ayran", "Islak Mendil", "Zeytin"), result.map { it.name })
+            assertEquals(
+                listOf("Ayran", "Islak Mendil", "Zeytin"),
+                names(shape(groups, order = SortOrder.NAME)),
+            )
         } finally {
             Locale.setDefault(default)
         }
@@ -71,7 +117,55 @@ class ResultShaperTest {
 
     @Test
     fun `bos liste bos doner`() {
-        val result = ResultShaper.shape(emptyList(), market = "Migros", order = SortOrder.NAME)
-        assertEquals(emptyList<Item>(), result)
+        assertEquals(emptyList<SearchRow>(), shape(emptyList(), market = "Migros"))
+    }
+
+    // --- Alaka bölümlemesi --------------------------------------------------
+
+    private val mixed = listOf(
+        group("Yerli Muz 1 Kg", 0, offer("BİM", "79.00")),
+        group("Muz Kremalı Gofret", 1, offer("A101", "8.00")),
+        group("Muz Aromalı Süt", 1, offer("ŞOK", "15.50")),
+    )
+
+    /**
+     * Asıl şikâyet buydu: 8 ₺'lik gofret, fiyata göre sıralandığı için 79 ₺'lik
+     * muzun üstüne çıkıyor ve "EN UCUZ" rozetini alıyordu.
+     */
+    @Test
+    fun `ilgili urunler ana listenin altina iner`() {
+        assertEquals(listOf("Yerli Muz 1 Kg"), names(shape(mixed)))
+    }
+
+    @Test
+    fun `ilgili urunler basligi sayiyi tasir`() {
+        val header = shape(mixed).filterIsInstance<SearchRow.RelatedHeader>().single()
+        assertEquals(2, header.count)
+        assertTrue(!header.expanded)
+    }
+
+    @Test
+    fun `baslik acilinca ilgili urunler listeye eklenir`() {
+        assertEquals(
+            listOf("Yerli Muz 1 Kg", "Muz Kremalı Gofret", "Muz Aromalı Süt"),
+            names(shape(mixed, relatedExpanded = true)),
+        )
+    }
+
+    /**
+     * Hiç "asıl hedef" yoksa bölme yapılmamalı: aksi halde ana liste boş görünür
+     * ve kullanıcı kapalı bir başlığın ardındaki tüm sonuçları hiç göremez.
+     */
+    @Test
+    fun `sadece ilgili urun varsa bolumleme yapilmaz`() {
+        val onlyRelated = mixed.filter { it.relevance != ResultShaper.RELEVANCE_HEAD }
+        val rows = shape(onlyRelated)
+        assertTrue(rows.none { it is SearchRow.RelatedHeader })
+        assertEquals(listOf("Muz Kremalı Gofret", "Muz Aromalı Süt"), names(rows))
+    }
+
+    @Test
+    fun `filtre ile eslesmeyen grup tamamen duser`() {
+        assertEquals(emptyList<String>(), names(shape(mixed, market = "CarrefourSA")))
     }
 }

@@ -7,6 +7,7 @@ import com.marketrehberim.data.remote.dto.CityDto
 import com.marketrehberim.data.remote.dto.HistoryPoint
 import com.marketrehberim.data.remote.dto.MarketsDto
 import com.marketrehberim.data.remote.dto.PriceSubmission
+import com.marketrehberim.data.remote.dto.ProductGroup
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -25,6 +26,17 @@ interface ItemRemoteSource {
         @Path("city") city: String,
         @Path("itemName") itemName: String,
     ): Response<List<Item>>
+
+    /**
+     * Ürüne göre gruplanmış arama sonucu — arama ekranının kullandığı uç.
+     * `search` düz liste döndürmeye devam ediyor: ürün detayındaki market
+     * karşılaştırması ve sepet optimizasyonu ona bağlı.
+     */
+    @GET("products/{city}/{itemName}")
+    suspend fun products(
+        @Path("city") city: String,
+        @Path("itemName") itemName: String,
+    ): Response<List<ProductGroup>>
 
     @GET("cities")
     suspend fun cities(): List<CityDto>

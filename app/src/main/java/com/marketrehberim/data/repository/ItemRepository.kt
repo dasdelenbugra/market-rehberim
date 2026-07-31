@@ -8,6 +8,7 @@ import com.marketrehberim.data.remote.dto.CityDto
 import com.marketrehberim.data.remote.dto.HistoryPoint
 import com.marketrehberim.data.remote.dto.MarketsDto
 import com.marketrehberim.data.remote.dto.PriceSubmission
+import com.marketrehberim.data.remote.dto.ProductGroup
 import javax.inject.Inject
 
 /**
@@ -22,22 +23,56 @@ data class SearchResult(
     val updatedAt: String? = null,
 )
 
+/** Gruplanmış arama sonucu + ulusal fiyatların son güncellenme zamanı. */
+data class ProductResult(
+    val groups: List<ProductGroup> = emptyList(),
+    val updatedAt: String? = null,
+)
+
+/** Backend 2xx dışında yanıt verdi. Kodu, ağ hatasından ayırmak için taşınır. */
+class HttpException(val code: Int) : Exception("HTTP $code")
+
 /**
  * Uzak veri kaynağına erişim. Backend birleşik aramayı (ulusal + crowdsourced)
  * tek uçta topladığından istemci tarafında ayrı market çağrılarına gerek yoktur.
- * Ağ hataları yukarı sızmaz; boş sonuç döner.
+ *
+ * Arama dışındaki uçlar hatayı yutup boş değer döner — anasayfadaki market/şehir
+ * listeleri yardımcı bilgi, yüklenememeleri ekranı bloklamamalı. **Arama** ise
+ * `Result` döndürür: eskiden o da yutuluyordu ve internet yokken kullanıcı
+ * "sonuç bulunamadı" görüp ürünün olmadığını sanıyordu.
  */
 class ItemRepository @Inject constructor(
     private val remote: ItemRemoteSource,
 ) {
-    suspend fun search(city: String, name: String): SearchResult =
+    suspend fun search(city: String, name: String): Result<SearchResult> =
         runCatching {
             val response = remote.search(city, name)
+            // Retrofit 4xx/5xx'te istisna atmaz; sunucu hatası sessizce boş
+            // listeye dönüşmesin diye burada açıkça hataya çeviriyoruz.
+            if (!response.isSuccessful) {
+                throw HttpException(response.code())
+            }
             SearchResult(
                 items = response.body().orEmpty(),
                 updatedAt = response.headers()["X-Data-Updated"],
             )
-        }.getOrDefault(SearchResult())
+        }
+
+    /**
+     * Arama ekranının kullandığı gruplu sonuç. Hata işleme [search] ile aynı
+     * gerekçeye tabi: internet yokken "sonuç bulunamadı" göstermek yanlış.
+     */
+    suspend fun products(city: String, name: String): Result<ProductResult> =
+        runCatching {
+            val response = remote.products(city, name)
+            if (!response.isSuccessful) {
+                throw HttpException(response.code())
+            }
+            ProductResult(
+                groups = response.body().orEmpty(),
+                updatedAt = response.headers()["X-Data-Updated"],
+            )
+        }
 
     suspend fun cities(): List<CityDto> =
         runCatching { remote.cities() }.getOrDefault(emptyList())

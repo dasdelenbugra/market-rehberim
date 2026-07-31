@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Market Rehberim</string>
     <string name="empty_results">Sonuç bulunamadı. Farklı bir arama deneyin.</string>
+    <string name="retry">Tekrar dene</string>
+    <string name="error_network">Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.</string>
+    <string name="error_server">Sunucuya ulaşıldı ama yanıt alınamadı. Biraz sonra tekrar dene.</string>
+    <string name="error_unknown">Beklenmeyen bir hata oldu. Tekrar dene.</string>
     <string name="search_hint">Ara</string>
     <string name="no_photo">Fotoğraf alınamadı.</string>
     <string name="no_object_detected">Nesne tanınamadı. Tekrar deneyin.</string>
@@ -10,6 +14,10 @@
     <string name="home_subtitle">Ürünü kamerayla tara, en uygun fiyatı marketler arasında karşılaştır.</string>
     <string name="scan_with_camera">Kamera ile Tara</string>
     <string name="cheapest_badge">EN UCUZ</string>
+    <string name="market_spread">%1$d markette · %2$.2f – %3$.2f ₺</string>
+    <string name="market_single">Tek markette</string>
+    <string name="related_products">İlgili ürünler (%d)</string>
+    <string name="search_meta_groups">%1$s · %2$d ürün · en ucuz %3$.2f ₺</string>
     <string name="all_markets">Tümü</string>
     <string name="sort">Sırala</string>
     <string name="favorite">Favori</string>

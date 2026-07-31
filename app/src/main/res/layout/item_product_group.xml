@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Arama sonucu satırı.
-
-  Üç sütun: görsel · (ad + market) · (fiyat + fark). Fiyat farkı sütunu ekranın
-  en önemli bilgisi — "kaç lira fark var" hesabını kullanıcıdan alıp buraya taşır.
-  En ucuz satır ItemViewHolder tarafından yeşil konturla işaretlenir.
--->
+<!-- Bir ürün, tüm marketleriyle birlikte tek satırda.
+     Marketlerin tek tek karşılaştırması ürün detayında; burada özet var:
+     en ucuz fiyat, kaç markette bulunduğu ve fiyat aralığı. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -13,6 +9,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginVertical="5dp"
+    android:clickable="true"
+    android:focusable="true"
     app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
     app:cardCornerRadius="20dp"
     app:cardElevation="0dp"
@@ -25,8 +23,6 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
-        <!-- Market fotoğrafları beyaz zeminli ve boşluklu gelir; centerCrop etiketi
-             kesiyordu. fitCenter ürünü olduğu gibi gösterir. -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/image"
             android:layout_width="80dp"
@@ -35,7 +31,8 @@
             android:contentDescription="@string/item_image_desc"
             android:padding="4dp"
             android:scaleType="fitCenter"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.MarketRehberim.Image" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.MarketRehberim.Image"
+            />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -48,37 +45,32 @@
                 android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
                 android:maxLines="2"
+                android:ellipsize="end"
                 android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:textColor="?attr/colorOnSurface"
-                tools:text="Sütaş Günlük Süt 1 lt" />
+                tools:text="Yerli Muz 1 Kg" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="4dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Marka rengi noktası: aynı renk filtre çiplerinde ve sepette tekrar eder -->
                 <View
                     android:id="@+id/marketDot"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
-                    android:background="@drawable/shape_market_dot"
-                    tools:backgroundTint="@color/market_migros" />
+                    android:background="@drawable/shape_market_dot" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/from"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
+                    android:layout_marginStart="6dp"
                     android:textAppearance="?attr/textAppearanceLabelMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    tools:text="Migros" />
+                    tools:text="BİM" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvCheapest"
@@ -95,6 +87,18 @@
                     android:visibility="gone"
                     tools:visibility="visible" />
             </LinearLayout>
+
+            <!-- Asıl yeni bilgi: aynı ürün kaç markette var ve aralık ne.
+                 Eski "+2,40 ₺" farkı kaldırıldı; farklı ürünleri kıyaslıyordu. -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvMarketSpread"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="5 markette · 79,00 – 94,90 ₺" />
         </LinearLayout>
 
         <LinearLayout
@@ -110,17 +114,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:maxLines="1"
-                tools:text="38,50 ₺" />
+                tools:text="79,00 ₺" />
 
             <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/tvDiff"
-                style="@style/TextAppearance.MarketRehberim.PriceDelta"
+                android:id="@+id/tvUnitPrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone"
-                tools:text="+2,40 ₺"
+                tools:text="79,00 ₺/kg"
                 tools:visibility="visible" />
         </LinearLayout>
     </LinearLayout>

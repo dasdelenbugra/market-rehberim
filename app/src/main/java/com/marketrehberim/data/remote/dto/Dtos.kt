@@ -66,6 +66,36 @@ data class HistoryPoint(
     val date: String,
 )
 
+/**
+ * GET /products/<city>/<name> — aynı ürünü tek satırda toplayan grup.
+ *
+ * Arama sonucu iki eksende karışık geliyordu: hangi ürün (muz / muzlu gofret) ve
+ * hangi market (aynı muz beş markette). Bu tip birinci ekseni satır, ikincisini
+ * satırın içeriği yapar.
+ *
+ * @param relevance 0 = sorgunun asıl hedefi ("Yerli Muz"), 1 = yalnızca ilgili
+ *   ("Muz Aromalı Süt"). Liste bu ayrımla iki bölüme ayrılır.
+ * @param offers marketlerin teklifleri, ucuzdan pahalıya.
+ */
+data class ProductGroup(
+    val name: String,
+    val image: String = "",
+    val unitPrice: String? = null,
+    val unit: String? = null,
+    val bestPrice: String,
+    val bestMarket: String,
+    val maxPrice: String,
+    val marketCount: Int,
+    val relevance: Int,
+    val offers: List<Item> = emptyList(),
+) {
+    val bestPriceValue: Double get() = bestPrice.toDoubleOrNull() ?: Double.MAX_VALUE
+
+    /** Detaya geçerken taşınan kayıt: grubun en ucuz teklifi. */
+    val cheapestOffer: Item?
+        get() = offers.minByOrNull { it.priceValue }
+}
+
 /** Item -> crowdsourced gönderim gövdesi dönüşümü için yardımcı. */
 fun Item.toSubmission(city: String): PriceSubmission =
     PriceSubmission(city = city, market = from, name = name, price = price, image = image)

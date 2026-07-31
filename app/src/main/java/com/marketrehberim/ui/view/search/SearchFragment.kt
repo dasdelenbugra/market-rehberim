@@ -17,12 +17,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
-import com.google.android.material.snackbar.Snackbar
 import com.marketrehberim.R
 import com.marketrehberim.data.model.Item
 import com.marketrehberim.databinding.FragmentSearchBinding
-import com.marketrehberim.ui.adapter.ItemAdapter
+import com.marketrehberim.data.remote.dto.ProductGroup
+import com.marketrehberim.ui.adapter.ProductGroupAdapter
 import com.marketrehberim.ui.adapter.SkeletonAdapter
+import com.marketrehberim.ui.state.SearchError
+import com.marketrehberim.ui.state.SearchRow
 import com.marketrehberim.ui.state.UIItemState
 import com.marketrehberim.ui.viewmodel.SearchViewModel
 import com.marketrehberim.ui.viewmodel.SortOrder
@@ -34,7 +36,10 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
     private var _binding: FragmentSearchBinding? = null
     private val binding get() = _binding!!
 
-    private val itemAdapter = ItemAdapter(onClick = ::openDetail)
+    private val groupAdapter = ProductGroupAdapter(
+        onProductClick = ::openGroup,
+        onRelatedToggle = { searchViewModel.toggleRelated() },
+    )
     private val skeletonAdapter = SkeletonAdapter()
     private val searchViewModel: SearchViewModel by viewModels()
 
@@ -47,9 +52,10 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.recyclerView.adapter = itemAdapter
+        binding.recyclerView.adapter = groupAdapter
         binding.etSearch.setOnEditorActionListener(this)
         binding.btnSort.setOnClickListener { showSortMenu() }
+        binding.btnRetry.setOnClickListener { searchViewModel.retry() }
         observeData()
         observeMarkets()
         handleIncomingQuery(savedInstanceState)
@@ -77,8 +83,8 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
                     when (state) {
                         is UIItemState.Idle -> idleLogic()
                         is UIItemState.Loading -> loadingLogic()
-                        is UIItemState.Success -> successLogic(state.items)
-                        is UIItemState.Error -> errorLogic(state.message)
+                        is UIItemState.Success -> successLogic(state.rows)
+                        is UIItemState.Error -> errorLogic(state.kind)
                     }
                 }
             }
@@ -152,6 +158,15 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         }.show()
     }
 
+    /**
+     * Gruba dokunuldu: detaya grubun **en ucuz** teklifi taşınır. Detay ekranı
+     * zaten aynı adı yeniden arayıp marketleri yan yana koyuyor, yani grubun
+     * tamamı orada görünür.
+     */
+    private fun openGroup(group: ProductGroup) {
+        openDetail(group.cheapestOffer ?: return)
+    }
+
     private fun openDetail(item: Item) {
         // Seçim = "bu fiyata razı oldum". Kazanç burada kaydedilir, anasayfadaki
         // tasarruf şeridi bunu toplar.
@@ -204,23 +219,24 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         binding.tvUpdated.visibility = GONE
     }
 
-    private fun successLogic(items: List<Item>) {
+    private fun successLogic(rows: List<SearchRow>) {
         binding.etSearch.isEnabled = true
 
-        if (binding.recyclerView.adapter !== itemAdapter) {
-            binding.recyclerView.adapter = itemAdapter
+        if (binding.recyclerView.adapter !== groupAdapter) {
+            binding.recyclerView.adapter = groupAdapter
         }
-        itemAdapter.submitList(items) {
-            if (items.isNotEmpty()) binding.recyclerView.scheduleLayoutAnimation()
+        groupAdapter.submitList(rows) {
+            if (rows.isNotEmpty()) binding.recyclerView.scheduleLayoutAnimation()
         }
 
-        val hasResults = items.isNotEmpty()
+        val hasResults = rows.isNotEmpty()
+        resetEmptyView()
         binding.recyclerView.visibility = if (hasResults) VISIBLE else GONE
         binding.emptyView.visibility = if (hasResults) GONE else VISIBLE
         binding.filterRow.visibility =
             if (searchViewModel.markets.value.isNotEmpty()) VISIBLE else GONE
 
-        bindResultMeta(items)
+        bindResultMeta()
         bindUpdated(hasResults)
     }
 
@@ -246,28 +262,55 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         java.text.SimpleDateFormat("d MMM HH:mm", tr).format(parsed!!)
     }.getOrDefault(iso)
 
-    /** "Tokat · 9 sonuç · en ucuz 38,50 ₺" — sayfa üstünde tek satırlık özet. */
-    private fun bindResultMeta(items: List<Item>) {
-        val cheapest = items.map { it.priceValue }.filter { it != Double.MAX_VALUE }.minOrNull()
-        if (items.isEmpty() || cheapest == null) {
+    /**
+     * "Tokat · 24 ürün · en ucuz 8,00 ₺" — sayfa üstünde tek satırlık özet.
+     * Artık "sonuç" değil "ürün" sayılıyor: aynı muzun beş marketi tek üründür.
+     */
+    private fun bindResultMeta() {
+        val count = searchViewModel.visibleGroupCount
+        val cheapest = searchViewModel.cheapestVisiblePrice
+        if (count == 0 || cheapest == null) {
             binding.tvResultMeta.visibility = GONE
             return
         }
         binding.tvResultMeta.text = getString(
-            R.string.search_meta,
+            R.string.search_meta_groups,
             searchViewModel.cityLabel,
-            items.size,
+            count,
             cheapest,
         )
         binding.tvResultMeta.visibility = VISIBLE
     }
 
-    private fun errorLogic(message: String) {
+    /**
+     * Hata, "sonuç bulunamadı"dan ayrı görünmeli: aynı boş ekranı gösterirsek
+     * kullanıcı internetinin kapalı olduğunu değil, ürünün olmadığını sanıyor.
+     * Aynı yerleşimi kullanır ama ikon, metin ve "Tekrar dene" butonu değişir.
+     */
+    private fun errorLogic(kind: SearchError) {
         binding.etSearch.isEnabled = true
         binding.recyclerView.visibility = GONE
         binding.tvResultMeta.visibility = GONE
         binding.tvUpdated.visibility = GONE
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+        binding.filterRow.visibility = GONE
+
+        binding.tvEmpty.setText(
+            when (kind) {
+                SearchError.NETWORK -> R.string.error_network
+                SearchError.SERVER -> R.string.error_server
+                SearchError.UNKNOWN -> R.string.error_unknown
+            }
+        )
+        binding.ivEmptyIcon.setImageResource(R.drawable.ic_cloud_off)
+        binding.btnRetry.visibility = VISIBLE
+        binding.emptyView.visibility = VISIBLE
+    }
+
+    /** Hata görünümünden normal "sonuç yok" görünümüne döner. */
+    private fun resetEmptyView() {
+        binding.tvEmpty.setText(R.string.empty_results)
+        binding.ivEmptyIcon.setImageResource(R.drawable.ic_search_outlined)
+        binding.btnRetry.visibility = GONE
     }
 
     override fun onDestroyView() {
