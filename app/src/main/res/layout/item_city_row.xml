@@ -24,6 +24,7 @@
         android:id="@+id/ivSelected"
         android:layout_width="22dp"
         android:layout_height="22dp"
+        android:contentDescription="@string/city_selected_desc"
         android:src="@drawable/ic_check"
         android:visibility="gone"
         app:tint="?attr/colorPrimary" />

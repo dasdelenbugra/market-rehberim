@@ -43,10 +43,13 @@
             android:orientation="horizontal"
             android:paddingVertical="12dp">
 
+            <!-- Yanındaki "Konumumu kullan" metni zaten aynı şeyi söylüyor;
+                 ikon okunursa TalkBack aynı bilgiyi iki kez seslendirir. -->
             <com.google.android.material.imageview.ShapeableImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="@drawable/bg_icon_tonal"
+                android:importantForAccessibility="no"
                 android:padding="8dp"
                 android:src="@drawable/ic_my_location"
                 app:tint="?attr/colorPrimary" />

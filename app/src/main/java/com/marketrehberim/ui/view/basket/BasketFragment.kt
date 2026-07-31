@@ -109,7 +109,8 @@ class BasketFragment : Fragment() {
         binding.resultContainer.visibility = View.VISIBLE
         binding.emptyCard.visibility = View.GONE
 
-        binding.optimalTotal.text = "%.2f ₺".format(result.optimalSplit.total)
+        binding.optimalTotal.text =
+            getString(R.string.basket_total, result.optimalSplit.total)
 
         // Metin bloğu yerine yapılandırılmış satırlar: market noktası, ürün, hizalı fiyat.
         splitAdapter.submitList(result.optimalSplit.items)
