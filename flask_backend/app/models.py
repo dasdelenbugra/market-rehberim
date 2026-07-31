@@ -11,6 +11,8 @@
 """
 from dataclasses import dataclass, asdict
 
+from app import units
+
 
 @dataclass
 class Item:
@@ -22,9 +24,27 @@ class Item:
     source: str
 
     def to_dict(self) -> dict:
+        """JSON gövdesi.
+
+        `unitPrice`/`unit` alanları ada göre türetildiği için burada hesaplanır:
+        `Item` üreten her yer (dört kaynak + crowdsourced okuma) ayrı ayrı
+        doldurmak zorunda kalmasın. Miktar çıkarılamayan üründe `None` kalırlar
+        ve istemci satırı göstermez — bkz. `app.units`.
+        """
         data = asdict(self)
         data["from"] = data.pop("source")
+
+        derived = units.unit_price(self.price_value, self.name)
+        data["unitPrice"], data["unit"] = derived if derived else (None, None)
         return data
+
+    @property
+    def price_value(self) -> float:
+        """Sayısal fiyat; ayrıştırılamazsa 0.0."""
+        try:
+            return float(self.price)
+        except (TypeError, ValueError):
+            return 0.0
 
     @staticmethod
     def normalize_price(raw: str) -> str:
