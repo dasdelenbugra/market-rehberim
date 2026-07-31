@@ -10,9 +10,11 @@
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
-        <!-- Gerçek cihazla test: geliştirme makinesinin Wi-Fi IP'si.
-             Ağ değişince buradaki ve local.properties'teki adres güncellenmeli. -->
-        <domain includeSubdomains="true">192.168.1.173</domain>
+        <!-- Gerçek cihazla test edecekseniz geliştirme makinesinin o anki Wi-Fi
+             IP'sini buraya bir <domain> satırı olarak ekleyin ve aynı adresi
+             local.properties → backend.baseUrl alanına yazın. İki yer de
+             güncellenmezse istek TLS hatasıyla değil, sessizce başarısız olur.
+             Sabit bir IP bırakmıyoruz: ağ değişince ölü kural olarak kalıyor. -->
     </domain-config>
     <base-config cleartextTrafficPermitted="false" />
 </network-security-config>
