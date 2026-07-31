@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from app import cache, db, services, validation
+from app import cache, db, products as products_mod, services, validation
 from app import registry
 from app.scrapers import SCRAPERS
 from config import Config
@@ -59,6 +59,22 @@ def search(city: str, item_name: str):
     # Fiyatlar günlük tazeleniyor; istemci "Son güncelleme" rozetini bundan çizer.
     # Gövde şeması (List<Item>) sabit sözleşme olduğu için zaman damgası başlıkla
     # taşınır — aynı önbellek girdisinden gelir, ek istek yok.
+    updated_at = services.national_updated_at(city, item_name)
+    if updated_at:
+        response.headers["X-Data-Updated"] = updated_at
+    return response
+
+
+@api.get("/products/<city>/<path:item_name>")
+def products(city: str, item_name: str):
+    """Arama sonuçları **ürüne göre gruplanmış** hali.
+
+    `/search` düz liste döndürmeye devam ediyor: ürün detayındaki market
+    karşılaştırması ve sepet optimizasyonu onu kullanıyor, o sözleşme bozulmadı.
+    Arama ekranı ise gruplu görünüme ihtiyaç duyuyor — gerekçe: `app.products`.
+    """
+    items = services.search(city, item_name)
+    response = jsonify(products_mod.group(items, item_name))
     updated_at = services.national_updated_at(city, item_name)
     if updated_at:
         response.headers["X-Data-Updated"] = updated_at
