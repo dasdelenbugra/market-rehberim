@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.View
 import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
@@ -35,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     /** Sepet rozeti için: listeye ürün eklendiğinde alt gezinme geri bildirim verir. */
     @Inject
     lateinit var basketStore: BasketStore
+
+    /** Rozet animasyonu yalnız artışta oynasın diye önceki sayı tutuluyor. */
+    private var lastBasketCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -104,8 +108,27 @@ class MainActivity : AppCompatActivity() {
                     )
                     badge.isVisible = items.isNotEmpty()
                     badge.number = items.size
+
+                    // Kullanıcı ürünü detay ekranından ekliyor; rozet ekranın öbür
+                    // ucunda sessizce artıyordu. Sayı **arttığında** zıplasın:
+                    // silmede ya da ekran ilk kurulduğunda oynatmak gürültü olur.
+                    if (items.size > lastBasketCount) bounceBasketBadge()
+                    lastBasketCount = items.size
                 }
             }
+        }
+    }
+
+    private fun bounceBasketBadge() {
+        val icon = bottomNavigationView.findViewById<View>(R.id.basketFragment) ?: return
+        AnimatorSet().apply {
+            duration = 220L
+            interpolator = OvershootInterpolator(3f)
+            playTogether(
+                ObjectAnimator.ofFloat(icon, View.SCALE_X, 1f, 1.25f, 1f),
+                ObjectAnimator.ofFloat(icon, View.SCALE_Y, 1f, 1.25f, 1f),
+            )
+            start()
         }
     }
 }
