@@ -13,6 +13,8 @@ import sqlite3
 import threading
 from contextlib import contextmanager
 
+from app.text import fold
+
 _DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data.sqlite"))
 _lock = threading.Lock()
 
@@ -58,10 +60,16 @@ def init_db() -> None:
 
 
 def add_crowd_price(city: str, market: str, name: str, price: float, image: str | None) -> None:
+    """Şehir anahtarı `fold()` ile üretilir — `registry.city_key()` ile aynı işlev.
+
+    `str.lower()` kullanılamaz: "İstanbul".lower() birleşik bir karakter üretir
+    ("i" + U+0307) ve `registry`nin ürettiği "istanbul" anahtarıyla eşleşmez;
+    yerel market fiyatları aramada sessizce kaybolurdu. Bkz. `app.text`.
+    """
     with _lock, _conn() as conn:
         conn.execute(
             "INSERT INTO crowd_prices(city, market, name, price, image) VALUES(?,?,?,?,?)",
-            (city.strip().lower(), market.strip(), name.strip(), float(price), image),
+            (fold(city), market.strip(), name.strip(), float(price), image),
         )
         conn.execute(
             "INSERT INTO price_history(market, name, price) VALUES(?,?,?)",
@@ -70,7 +78,11 @@ def add_crowd_price(city: str, market: str, name: str, price: float, image: str 
 
 
 def latest_crowd_prices(city: str, name: str) -> list[dict]:
-    """Bir şehir+ürün için her yerel marketin EN GÜNCEL fiyatını döndürür."""
+    """Bir şehir+ürün için her yerel marketin EN GÜNCEL fiyatını döndürür.
+
+    Şehir anahtarı için bkz. `add_crowd_price` — yazma ve okuma aynı `fold()`
+    işlevini kullanmak zorunda.
+    """
     with _lock, _conn() as conn:
         rows = conn.execute(
             """
@@ -80,7 +92,7 @@ def latest_crowd_prices(city: str, name: str) -> list[dict]:
             GROUP BY market, name
             ORDER BY price ASC
             """,
-            (city.strip().lower(), f"%{name.strip()}%"),
+            (fold(city), f"%{name.strip()}%"),
         ).fetchall()
         return [dict(r) for r in rows]
 

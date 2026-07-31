@@ -125,6 +125,25 @@ def test_plausible_local_price_still_shown(client):
     assert any(r["from"] == "Mopaş" for r in results)
 
 
+def test_crowd_price_survives_turkish_city_casing(client):
+    """Şehir adı büyük harfli gelse de crowdsourced fiyat aramada görünmeli.
+
+    `str.lower()` Türkçe'de "İstanbul" → "i" + U+0307 üretiyor ve `registry`nin
+    `fold()` ile ürettiği "istanbul" anahtarıyla eşleşmiyordu; yerel market
+    fiyatları sessizce kayboluyordu.
+    """
+    resp = client.post(
+        "/prices",
+        json={"city": "İstanbul", "market": "Onur Market",
+              "name": "peynirtest", "price": "89,90 TL"},
+    )
+    assert resp.status_code == 201
+
+    for spelling in ("İstanbul", "istanbul", "ISTANBUL"):
+        data = client.get(f"/search/{spelling}/peynirtest").get_json()
+        assert any(r["from"] == "Onur Market" for r in data), spelling
+
+
 def test_basket_optimize(client):
     resp = client.post(
         "/basket/optimize",
