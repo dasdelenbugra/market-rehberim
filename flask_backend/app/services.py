@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 
 from app import cache, db, registry, validation
 from app.models import Item
@@ -109,6 +110,27 @@ def search(city: str, name: str) -> list[Item]:
     return results
 
 
+def _search_many(city: str, names: list[str]) -> list[tuple[str, list[Item]]]:
+    """Birden çok ürünü paralel arar; sıra korunur.
+
+    Sepet optimizasyonu ürün başına bir `search()` yapıyordu ve her biri önbellek
+    ıskaladığında ulusal kaynağa gidiyordu: on ürünlük bir sepet **ardışık** on
+    ağ çağrısı demekti ve kullanıcı yarım dakika bekliyordu. İş tamamen G/Ç
+    beklemesi olduğu için iş parçacıkları burada uygundur (GIL darboğaz değil).
+
+    Sınır 5: kaynağa aynı anda onlarca istek atıp hız sınırına takılmak,
+    beklemekten daha kötü. Tek ürünlük sepette havuz hiç kurulmaz.
+    """
+    if len(names) <= 1:
+        return [(name, search(city, name)) for name in names]
+
+    with ThreadPoolExecutor(max_workers=min(5, len(names))) as pool:
+        # `map` girdi sırasını korur; sonuçların sepet listesiyle hizalı kalması
+        # `optimalSplit` çıktısının sırası için önemli.
+        results = list(pool.map(lambda n: search(city, n), names))
+    return list(zip(names, results))
+
+
 def optimize_basket(city: str, item_names: list[str]) -> dict:
     """Alışveriş listesini marketler arasında en ucuza dağıtır.
 
@@ -120,9 +142,9 @@ def optimize_basket(city: str, item_names: list[str]) -> dict:
 
     # market -> { ürün adı -> en düşük fiyat }
     table: dict[str, dict[str, float]] = {}
-    for name in names:
+    for name, items in _search_many(city, names):
         best_per_market: dict[str, float] = {}
-        for it in search(city, name):
+        for it in items:
             price = float(it.price)
             if it.source not in best_per_market or price < best_per_market[it.source]:
                 best_per_market[it.source] = price
