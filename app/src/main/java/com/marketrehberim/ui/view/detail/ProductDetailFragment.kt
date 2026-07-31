@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -80,18 +81,29 @@ class ProductDetailFragment : Fragment() {
         viewModel.loadComparison(item)
 
         binding.btnBack.setOnClickListener { findNavController().navigateUp() }
-        binding.btnFavorite.setOnClickListener {
+        binding.btnFavorite.setOnClickListener { button ->
             val makeFavorite = !isFavorite
+            // Kalp ikonu küçük ve anlık; dokunsal geri bildirim "oldu" demenin
+            // en hızlı yolu. `CONTEXT_CLICK` seçildi: `CONFIRM` API 30+.
+            button.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
             viewModel.setFavorite(item, makeFavorite = makeFavorite)
             if (makeFavorite) askNotificationPermissionIfNeeded()
         }
-        binding.btnAddToBasket.setOnClickListener { addToBasket() }
+        binding.btnAddToBasket.setOnClickListener { button ->
+            button.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            addToBasket()
+        }
     }
 
     private fun bindItem() {
         binding.name.text = item.name
         binding.from.text = item.from
         binding.price.text = item.formattedPrice
+
+        val unitPrice = item.formattedUnitPrice
+        binding.tvUnitPrice.text = unitPrice
+        binding.tvUnitPrice.visibility = if (unitPrice != null) View.VISIBLE else View.GONE
+
         binding.marketDot.backgroundTintList =
             ColorStateList.valueOf(MarketPalette.colorFor(requireContext(), item.from))
         Glide.with(this).load(item.image).into(binding.image)

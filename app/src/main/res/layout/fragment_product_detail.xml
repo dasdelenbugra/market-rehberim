@@ -94,6 +94,19 @@
                             android:textStyle="bold"
                             tools:text="38,50 ₺" />
 
+                        <!-- Birim fiyat, paket fiyatının hemen yanında -->
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tvUnitPrice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginBottom="8dp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone"
+                            tools:text="112,50 ₺/L"
+                            tools:visibility="visible" />
+
                         <!-- En pahalı alternatife göre kazanç, fiyatın yanında -->
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/tvSaving"
