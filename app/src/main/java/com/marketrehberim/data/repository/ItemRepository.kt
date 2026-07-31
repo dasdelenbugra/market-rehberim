@@ -9,6 +9,7 @@ import com.marketrehberim.data.remote.dto.HistoryPoint
 import com.marketrehberim.data.remote.dto.MarketsDto
 import com.marketrehberim.data.remote.dto.PriceSubmission
 import com.marketrehberim.data.remote.dto.ProductGroup
+import org.json.JSONObject
 import javax.inject.Inject
 
 /**
@@ -31,6 +32,14 @@ data class ProductResult(
 
 /** Backend 2xx dışında yanıt verdi. Kodu, ağ hatasından ayırmak için taşınır. */
 class HttpException(val code: Int) : Exception("HTTP $code")
+
+/**
+ * Fiyat gönderimi sunucu tarafından reddedildi.
+ *
+ * @param reason sunucunun Türkçe gerekçesi; okunamadıysa `null` ve arayüz
+ *   genel mesaja düşer.
+ */
+class SubmitRejected(val reason: String?) : Exception(reason ?: "reddedildi")
 
 /**
  * Uzak veri kaynağına erişim. Backend birleşik aramayı (ulusal + crowdsourced)
@@ -86,6 +95,36 @@ class ItemRepository @Inject constructor(
     suspend fun optimizeBasket(city: String, items: List<String>): BasketResponse? =
         runCatching { remote.optimizeBasket(BasketRequest(city, items)) }.getOrNull()
 
-    suspend fun submitPrice(submission: PriceSubmission): Boolean =
-        runCatching { remote.submitPrice(submission).isSuccessful }.getOrDefault(false)
+    /**
+     * Crowdsourced fiyat gönderir.
+     *
+     * Eskiden yalnız `Boolean` dönüyordu ve kullanıcı her başarısızlıkta aynı
+     * genel mesajı görüyordu. Backend artık gerekçeyi Türkçe söylüyor
+     * ("Fiyat 0.10 - 20000 ₺ aralığında olmalı (okunan: 0.00 ₺)") — bu, çoğu
+     * durumda OCR'ın etiketi okuyamadığı anlamına gelir ve kullanıcının fiyatı
+     * elle düzeltmesi gerektiğini anlatır. Mesajı yutmak o yardımı çöpe atıyordu.
+     *
+     * @return başarıda `Unit`; reddedilirse [SubmitRejected] taşıyan hata.
+     */
+    suspend fun submitPrice(submission: PriceSubmission): Result<Unit> =
+        runCatching {
+            val response = remote.submitPrice(submission)
+            if (!response.isSuccessful) {
+                throw SubmitRejected(serverReason(response.errorBody()?.string()))
+            }
+        }
+
+    /**
+     * Hata gövdesinden `{"error": "..."}` alanını çıkarır.
+     *
+     * Gövde beklenen biçimde değilse (vekil sunucunun HTML hata sayfası, boş
+     * yanıt) `null` döner ve çağıran genel mesaja düşer — burada ham HTML
+     * göstermek kullanıcı için hiçbir şey ifade etmez.
+     */
+    private fun serverReason(body: String?): String? {
+        if (body.isNullOrBlank()) return null
+        return runCatching {
+            JSONObject(body).optString("error").takeIf { it.isNotBlank() }
+        }.getOrNull()
+    }
 }

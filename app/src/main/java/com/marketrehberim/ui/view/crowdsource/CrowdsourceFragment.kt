@@ -19,6 +19,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.marketrehberim.R
 import com.marketrehberim.databinding.FragmentCrowdsourceBinding
 import com.marketrehberim.ui.viewmodel.CrowdsourceViewModel
+import com.marketrehberim.ui.viewmodel.SubmitOutcome
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -90,13 +91,20 @@ class CrowdsourceFragment : Fragment() {
     private fun observeEvents() {
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.events.collect { success ->
-                    if (success) {
-                        showMessage(getString(R.string.price_submitted))
-                        binding.etName.text?.clear()
-                        binding.etPrice.text?.clear()
-                    } else {
-                        showMessage(getString(R.string.price_submit_failed))
+                viewModel.events.collect { outcome ->
+                    when (outcome) {
+                        is SubmitOutcome.Success -> {
+                            showMessage(getString(R.string.price_submitted))
+                            binding.etName.text?.clear()
+                            binding.etPrice.text?.clear()
+                        }
+                        // Red gerekçesi genelde düzeltilebilir bir şey söylüyor
+                        // ("fiyat aralık dışı"); alanlar temizlenmez, kullanıcı
+                        // yazdığını düzeltebilsin. Mesaj da uzun, o yüzden LONG.
+                        is SubmitOutcome.Rejected ->
+                            showMessage(outcome.reason, Snackbar.LENGTH_LONG)
+                        is SubmitOutcome.Failed ->
+                            showMessage(getString(R.string.price_submit_failed))
                     }
                 }
             }
@@ -133,8 +141,8 @@ class CrowdsourceFragment : Fragment() {
         viewModel.submit(market, name, price)
     }
 
-    private fun showMessage(message: String) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+    private fun showMessage(message: String, duration: Int = Snackbar.LENGTH_SHORT) {
+        Snackbar.make(binding.root, message, duration).show()
     }
 
     override fun onDestroyView() {
