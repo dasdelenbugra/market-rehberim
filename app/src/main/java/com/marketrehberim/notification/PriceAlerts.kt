@@ -66,8 +66,17 @@ class PriceAlerts @Inject constructor(
             .build()
 
         // Ürün başına sabit kimlik: aynı ürün için ikinci bildirim birikmez, tazeler.
-        NotificationManagerCompat.from(context).notify(item.hashCode(), notification)
-        return true
+        //
+        // try/catch gereksiz görünse de değil: yukarıdaki `canNotify()` ile bu satır
+        // arasında kullanıcı izni geri alabilir (işçi arka planda dakikalarca
+        // çalışabiliyor). O durumda takip sessizce başarısız olmalı, uygulama
+        // çökmemeli. Lint de zaten bu kontrolü izleyemediği için burayı işaretliyordu.
+        return try {
+            NotificationManagerCompat.from(context).notify(item.hashCode(), notification)
+            true
+        } catch (e: SecurityException) {
+            false
+        }
     }
 
     fun canNotify(): Boolean {
