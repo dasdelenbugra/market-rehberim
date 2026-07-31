@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
 import com.marketrehberim.R
 import com.marketrehberim.data.model.Item
@@ -24,6 +25,7 @@ import com.marketrehberim.databinding.FragmentProductDetailBinding
 import com.marketrehberim.ui.adapter.ProductCompareAdapter
 import com.marketrehberim.ui.theme.MarketPalette
 import com.marketrehberim.ui.viewmodel.ProductDetailViewModel
+import com.marketrehberim.ui.widget.LineChartView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -130,15 +132,80 @@ class ProductDetailFragment : Fragment() {
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.history.collect { points ->
-                    val prices = points.mapNotNull { it.price.toFloatOrNull() }
-                    binding.chart.setValues(prices)
-                    if (prices.isNotEmpty()) {
-                        binding.tvMin.text = getString(R.string.min_price, prices.min())
-                        binding.tvMax.text = getString(R.string.max_price, prices.max())
+                    // Fiyatı okunamayan nokta grafiği kaydırırdı; tarihiyle
+                    // birlikte elenmesi için eşleme tek adımda yapılıyor.
+                    val chartPoints = points.mapNotNull { point ->
+                        val value = point.price.toFloatOrNull() ?: return@mapNotNull null
+                        LineChartView.Point(
+                            value = value,
+                            priceLabel = getString(R.string.price_only, value),
+                            dateLabel = shortDate(point.date),
+                        )
                     }
+
+                    // Grafik en az iki noktayla anlamlı; tek fiyatla "en düşük /
+                    // en yüksek" yazmak da yanıltıcı olurdu (ikisi de aynı sayı).
+                    val plottable = chartPoints.size >= 2
+                    binding.chart.visibility = if (plottable) View.VISIBLE else View.GONE
+                    binding.tvChartHint.visibility = if (plottable) View.VISIBLE else View.GONE
+                    binding.historyRange.visibility = if (plottable) View.VISIBLE else View.GONE
+                    binding.tvHistoryEmpty.visibility = if (plottable) View.GONE else View.VISIBLE
+                    if (!plottable) {
+                        binding.tvTrend.visibility = View.GONE
+                        return@collect
+                    }
+
+                    val prices = chartPoints.map { it.value }
+                    binding.chart.setPoints(chartPoints)
+                    binding.tvMin.text = getString(R.string.min_price, prices.min())
+                    binding.tvMax.text = getString(R.string.max_price, prices.max())
+                    // Grafik dokunmayla okunuyor; TalkBack için aralığı sözle söyle.
+                    binding.chart.contentDescription =
+                        getString(R.string.chart_desc, prices.min(), prices.max())
+
+                    bindTrend(first = prices.first(), last = prices.last())
                 }
             }
         }
+    }
+
+    /**
+     * "2026-07-14" -> "14.07". Backend tarihi hep ISO gönderiyor; ayrıştırıcı
+     * kurmak yerine dilimlemek yeterli, biçim bozuksa etiket ham haliyle kalır.
+     */
+    private fun shortDate(iso: String): String {
+        val parts = iso.split("-")
+        return if (parts.size == 3) "${parts[2]}.${parts[1]}" else iso
+    }
+
+    /**
+     * İlk kayıttan bugüne yüzde değişim. Renk bilgiyi taşıyor: yeşil "ucuzladı",
+     * kırmızı "zamlandı" — kullanıcı sayıyı okumadan yönü görsün.
+     */
+    private fun bindTrend(first: Float, last: Float) {
+        binding.tvTrend.visibility = View.VISIBLE
+        val changePercent = if (first > 0f) (last - first) / first * 100f else 0f
+
+        // %0,5 altı gürültü: aynı fiyata "zamlandı" demek güveni sarsar.
+        if (kotlin.math.abs(changePercent) < 0.5f) {
+            binding.tvTrend.setText(R.string.price_trend_flat)
+            binding.tvTrend.setTextColor(
+                MaterialColors.getColor(binding.tvTrend, com.google.android.material.R.attr.colorOnSurfaceVariant)
+            )
+            return
+        }
+
+        val dropped = changePercent < 0f
+        binding.tvTrend.text = getString(
+            if (dropped) R.string.price_trend_down else R.string.price_trend_up,
+            kotlin.math.abs(changePercent),
+        )
+        binding.tvTrend.setTextColor(
+            MaterialColors.getColor(
+                binding.tvTrend,
+                if (dropped) com.google.android.material.R.attr.colorPrimary else com.google.android.material.R.attr.colorError,
+            )
+        )
     }
 
     /**

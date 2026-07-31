@@ -167,12 +167,51 @@
                             android:orientation="vertical"
                             android:padding="14dp">
 
+                            <!-- Geçmiş henüz birikmediyse grafiğin yerine bu geçer.
+                                 Boş bir kutu bırakmak yerine neden boş olduğunu söyler. -->
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/tvHistoryEmpty"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:paddingVertical="18dp"
+                                android:text="@string/history_empty"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:visibility="gone"
+                                tools:visibility="gone" />
+
+                            <!-- İlk kayıttan son kayda değişim. Rengi kodda
+                                 belirlenir: ucuzlama yeşil, zam kırmızı. -->
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/tvTrend"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
+                                android:textStyle="bold"
+                                android:visibility="gone"
+                                tools:text="↓ %8,2 ucuzladı"
+                                tools:visibility="visible" />
+
+                            <!-- Yükseklik 160 -> 180: alt şeridi artık tarih
+                                 etiketleri kullanıyor, çizim alanı kısalmasın. -->
                             <com.marketrehberim.ui.widget.LineChartView
                                 android:id="@+id/chart"
                                 android:layout_width="match_parent"
-                                android:layout_height="160dp" />
+                                android:layout_height="180dp"
+                                android:focusable="true" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/tvChartHint"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="@string/chart_hint"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
                             <LinearLayout
+                                android:id="@+id/historyRange"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="10dp"
