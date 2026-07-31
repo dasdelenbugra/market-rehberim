@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timedelta
 
-from app import cache, db, registry
+from app import cache, db, registry, validation
 from app.models import Item
 from app.sources import NATIONAL_SOURCE
 from config import Config
@@ -60,12 +60,25 @@ def search(city: str, name: str) -> list[Item]:
     # eklenirse sonraki isteklerde yerel sonuçlar birikir.
     results: list[Item] = list(national)
 
+    # Ulusal fiyatlar, crowdsourced kayıtlar için ölçek referansı. Süzme yazma
+    # anında değil burada yapılıyor: kural sonradan değişirse eski kayıtlar da
+    # yeniden değerlendirilsin, veritabanını geri dönülmez biçimde budamayalım.
+    reference = []
+    for it in national:
+        try:
+            reference.append(float(it.price))
+        except (TypeError, ValueError):
+            continue
+
     # Yerel marketler (crowdsourced)
     for row in db.latest_crowd_prices(city, name):
+        price = Item.normalize_price(str(row["price"]))
+        if not validation.is_plausible(float(price), reference):
+            continue
         results.append(
             Item(
                 name=row["name"],
-                price=Item.normalize_price(str(row["price"])),
+                price=price,
                 image=row.get("image") or "",
                 source=row["market"],
             )

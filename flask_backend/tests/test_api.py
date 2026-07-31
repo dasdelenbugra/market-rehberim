@@ -1,24 +1,9 @@
-"""API testleri (mock modda, geçici DB ile — ağ gerektirmez)."""
-import os
-import tempfile
+"""API testleri (mock modda, geçici DB ile — ağ gerektirmez).
 
-os.environ["USE_MOCK"] = "true"
-os.environ["DB_PATH"] = os.path.join(tempfile.gettempdir(), "mr_test.sqlite")
-# Her test oturumunda temiz başla
-if os.path.exists(os.environ["DB_PATH"]):
-    os.remove(os.environ["DB_PATH"])
-
-import pytest
-
-from app import create_app
+Ortam kurulumu ve `client` fixture'ı `conftest.py`'de.
+"""
+from app import cache, db, validation
 from app.models import Item
-
-
-@pytest.fixture()
-def client():
-    app = create_app()
-    app.config.update(TESTING=True)
-    return app.test_client()
 
 
 def test_health(client):
@@ -61,6 +46,83 @@ def test_submit_crowd_price_then_appears_in_search(client):
 
 def test_submit_price_validation(client):
     assert client.post("/prices", json={"city": "tokat"}).status_code == 400
+
+
+def _submission(**overrides):
+    body = {"city": "tokat", "market": "Erenler", "name": "zeytin", "price": "45,90 TL"}
+    body.update(overrides)
+    return body
+
+
+def test_submit_rejects_unreadable_price(client):
+    """OCR fiyatı çıkaramazsa `normalize_price` "0.00" döner.
+
+    Bu satır kaydedilseydi fiyat sıralamasında **her aramada birinci** olur,
+    "EN UCUZ" rozetini alır ve sepet optimizasyonunda o marketi bedava
+    gösterirdi. Reddedilmesi gerekir.
+    """
+    resp = client.post("/prices", json=_submission(price="okunamadı"))
+    assert resp.status_code == 400
+    assert "Fiyat" in resp.get_json()["error"]
+
+
+def test_submit_rejects_decimal_shift(client):
+    """15,95 yerine 1595,00 okunması tipik bir OCR hatası; üst sınır bunu eler."""
+    assert client.post("/prices", json=_submission(price="195000")).status_code == 400
+
+
+def test_submit_rejects_unknown_market(client):
+    """Market adı serbest metindi; şehirde olmayan bir markete fiyat düşebiliyordu."""
+    resp = client.post("/prices", json=_submission(market="Olmayan Market"))
+    assert resp.status_code == 400
+    assert "tanımsız market" in resp.get_json()["error"]
+
+
+def test_submit_rejects_unknown_city(client):
+    assert client.post("/prices", json=_submission(city="Atlantis")).status_code == 400
+
+
+def test_submit_accepts_national_market(client):
+    """Kullanıcı ulusal zincirin şubesinde farklı bir etiket görmüş olabilir."""
+    assert client.post("/prices", json=_submission(market="Migros")).status_code == 201
+
+
+def test_submit_rate_limited(client):
+    """Döngüye girmiş bir istemci veritabanını saniyeler içinde dolduramamalı."""
+    validation.reset_rate_limit()
+    for _ in range(validation.RATE_LIMIT_MAX):
+        assert client.post("/prices", json=_submission()).status_code == 201
+
+    resp = client.post("/prices", json=_submission())
+    assert resp.status_code == 429
+    validation.reset_rate_limit()
+
+
+def test_implausible_crowd_price_hidden_from_search(client):
+    """Büyüklük mertebesi kaçmış eski kayıt arama sonucuna sızmamalı.
+
+    Doğrulama öncesi yazılmış satırlar veritabanında duruyor; süzme okuma
+    anında yapıldığı için onlar da elenir.
+    """
+    national = client.get("/search/tokat/süt").get_json()
+    ceiling = max(float(r["price"]) for r in national)
+
+    # Rotayı atlayarak yazıyoruz: kural yokken kaydedilmiş bir satırı taklit eder.
+    db.add_crowd_price("tokat", "Erenler", "süt", ceiling * 100, None)
+
+    results = client.get("/search/tokat/süt").get_json()
+    assert not any(r["from"] == "Erenler" for r in results)
+
+
+def test_plausible_local_price_still_shown(client):
+    """Yerel marketin ucuz olması elenme sebebi değil — uygulamanın amacı bu."""
+    national = client.get("/search/tokat/makarna").get_json()
+    floor = min(float(r["price"]) for r in national)
+
+    db.add_crowd_price("tokat", "Mopaş", "makarna", round(floor * 0.5, 2), None)
+
+    results = client.get("/search/tokat/makarna").get_json()
+    assert any(r["from"] == "Mopaş" for r in results)
 
 
 def test_basket_optimize(client):

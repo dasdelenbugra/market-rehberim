@@ -16,9 +16,8 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from app import cache, db, services
+from app import cache, db, services, validation
 from app import registry
-from app.models import Item
 from app.scrapers import SCRAPERS
 from config import Config
 
@@ -68,20 +67,24 @@ def search(city: str, item_name: str):
 
 @api.post("/prices")
 def submit_price():
-    """Crowdsourced fiyat gönderimi (raf etiketi OCR sonucu)."""
-    data = request.get_json(silent=True) or {}
-    required = ("city", "market", "name", "price")
-    if not all(data.get(k) not in (None, "") for k in required):
-        return jsonify({"error": "city, market, name, price zorunludur"}), 400
+    """Crowdsourced fiyat gönderimi (raf etiketi OCR sonucu).
 
-    price = Item.normalize_price(str(data["price"]))
-    db.add_crowd_price(
-        city=data["city"],
-        market=data["market"],
-        name=data["name"],
-        price=float(price),
-        image=data.get("image"),
-    )
+    Gövde doğrulanmadan yazılmaz: bu uç, kimsenin onaylamadığı OCR çıktısını
+    doğrudan arama sonuçlarına sokan tek yol. Gerekçe için bkz. `app.validation`.
+    """
+    # `remote_addr` ters vekil arkasında hep aynı gelebilir; hız sınırı bu
+    # durumda sıkılaşır ama açılmaz — güvenli taraf.
+    client_id = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
+    client_id = client_id.split(",")[0].strip()
+    if not validation.check_rate_limit(client_id):
+        return jsonify({"error": "Çok fazla gönderim. Biraz sonra tekrar dene."}), 429
+
+    try:
+        clean = validation.clean_submission(request.get_json(silent=True) or {})
+    except validation.ValidationError as err:
+        return jsonify({"error": err.message}), 400
+
+    db.add_crowd_price(**clean)
     return jsonify({"status": "ok"}), 201
 
 
