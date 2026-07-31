@@ -87,6 +87,21 @@ def test_submit_accepts_national_market(client):
     assert client.post("/prices", json=_submission(market="Migros")).status_code == 201
 
 
+def test_submit_twice_same_day_updates_history(client):
+    """Aynı ürüne aynı gün ikinci gönderim isteği düşürmemeli.
+
+    `price_history` günde tek noktaya indekslendiğinde düz INSERT burada
+    IntegrityError atıyordu — kullanıcı fiyatını düzeltmek isteyince 500 alıyordu.
+    Son gönderim kazanır.
+    """
+    first = client.post("/prices", json=_submission(name="tekrarurunu", price="10,00"))
+    second = client.post("/prices", json=_submission(name="tekrarurunu", price="12,00"))
+    assert (first.status_code, second.status_code) == (201, 201)
+
+    history = client.get("/history/Erenler/tekrarurunu").get_json()
+    assert [p["price"] for p in history] == ["12.00"]
+
+
 def test_submit_rate_limited(client):
     """Döngüye girmiş bir istemci veritabanını saniyeler içinde dolduramamalı."""
     validation.reset_rate_limit()
@@ -158,10 +173,48 @@ def test_basket_optimize(client):
     assert body["optimalSplit"]["total"] <= best_single + 0.01
 
 
-def test_history_synthetic(client):
-    data = client.get("/history/Migros/süt").get_json()
-    assert len(data) == 14
+def test_history_empty_when_no_data(client):
+    """Kayıt yoksa boş liste döner — eskiden burada uydurma seri üretiliyordu."""
+    assert client.get("/history/Migros/hicboyleurunyok").get_json() == []
+
+
+def test_history_is_recorded_from_search(client):
+    """Arama, ulusal fiyatları geçmişe işler; grafik verisi böyle birikir."""
+    results = client.get("/search/tokat/süt").get_json()
+    sample = next(r for r in results if r["from"] == "Migros")
+
+    data = client.get(f"/history/Migros/{sample['name']}").get_json()
+    assert len(data) == 1
     assert {"price", "date"} <= data[0].keys()
+    assert data[0]["price"] == sample["price"]
+
+
+def test_history_matches_exact_product(client):
+    """Genel bir kelime tek ürünün geçmişini döndürmemeli.
+
+    `LIKE '%süt%'` kullanıldığında farklı ürünlerin fiyatları tek seriye
+    karışıyordu; grafik anlamsız hale geliyordu.
+    """
+    client.get("/search/tokat/süt")
+    assert client.get("/history/Migros/süt").get_json() == []
+
+
+def test_history_one_point_per_day(client):
+    """Aynı gün tekrar aranırsa geçmişe ikinci nokta düşmez.
+
+    Önbellek kasıtlı olarak temizleniyor: aksi halde ikinci arama kaynağa hiç
+    gitmez ve test, günlük tekilleştirmeyi değil yalnızca önbelleği doğrulardı.
+    """
+    results = client.get("/search/tokat/ekmek").get_json()
+    sample = next(r for r in results if r["from"] == "Migros")
+
+    before = client.get(f"/history/Migros/{sample['name']}").get_json()
+
+    cache.clear()
+    client.get("/search/tokat/ekmek")
+
+    after = client.get(f"/history/Migros/{sample['name']}").get_json()
+    assert len(after) == len(before) == 1
 
 
 def test_price_normalization():

@@ -5,8 +5,6 @@
 """
 from __future__ import annotations
 
-import hashlib
-from datetime import datetime, timedelta
 
 from app import cache, db, registry, validation
 from app.models import Item
@@ -18,9 +16,32 @@ def _fetch_national(city: str, name: str) -> tuple[list[Item], str | None]:
     """Şehir merkezine yakın zincir şubelerinin fiyatları + son güncelleme zamanı.
 
     Pahalı olan kısım budur; sonucu `_national_cached` önbelleğe alır.
+
+    Taze çekilen fiyatlar aynı anda geçmişe de işlenir. Buraya konmasının sebebi
+    yalnızca önbellek ıskalandığında çalışması: `search()` içine konsaydı her
+    istek aynı fiyatı yeniden yazmaya çalışırdı.
     """
     latitude, longitude = registry.coords_for(city)
-    return NATIONAL_SOURCE.fetch_with_meta(name, latitude, longitude)
+    items, updated_at = NATIONAL_SOURCE.fetch_with_meta(name, latitude, longitude)
+    _record_history(items)
+    return items, updated_at
+
+
+def _record_history(items: list[Item]) -> None:
+    """Fiyat geçmişini besler. Grafik verisi ancak buradan birikir.
+
+    Hata yutulur: geçmiş kaydı yan iş, başarısız olması aramayı düşürmemeli.
+    """
+    rows = []
+    for it in items:
+        try:
+            rows.append((it.source, it.name, float(it.price)))
+        except (TypeError, ValueError):
+            continue
+    try:
+        db.record_daily_prices(rows)
+    except Exception:  # noqa: BLE001 - geçmiş kaydı aramayı bloklamamalı
+        pass
 
 
 def _national_cached(city: str, name: str) -> tuple[list[Item], str | None]:
@@ -151,24 +172,13 @@ def optimize_basket(city: str, item_names: list[str]) -> dict:
 
 
 def history(market: str, name: str) -> list[dict]:
-    """Fiyat geçmişi noktaları. Kayıt yoksa demo için sentetik seri üretir."""
+    """Fiyat geçmişi noktaları. Kayıt yoksa boş liste döner.
+
+    Eskiden burada, kayıt bulunamayınca `_synthetic_history()` ile uydurma bir
+    14 günlük seri üretiliyordu. Kaldırıldı: ulusal fiyatlar geçmişe hiç
+    yazılmadığı için o yedek pratikte **her zaman** devreye giriyordu ve
+    kullanıcı gerçek sanılan bir grafiğe bakıyordu. Veri yoksa istemci grafiği
+    gizler — uydurma fiyat göstermektense hiç göstermemek doğru.
+    """
     stored = db.price_history(market, name)
-    if stored:
-        return [{"price": f"{r['price']:.2f}", "date": r["created"][:10]} for r in stored]
-    return _synthetic_history(market, name)
-
-
-def _synthetic_history(market: str, name: str, days: int = 14) -> list[dict]:
-    """Deterministik, hafif dalgalanan 14 günlük demo fiyat serisi."""
-    seed = int(hashlib.md5(f"{market}:{name}".encode("utf-8")).hexdigest()[:6], 16)
-    base = 20 + (seed % 8000) / 100.0
-    today = datetime.now().date()
-    series = []
-    for i in range(days):
-        day = today - timedelta(days=days - 1 - i)
-        # Yavaş yükseliş + küçük salınım
-        drift = 1 + (i * 0.015)
-        wobble = 1 + (((seed >> i) % 7) - 3) / 100.0
-        price = base * drift * wobble
-        series.append({"price": f"{price:.2f}", "date": day.isoformat()})
-    return series
+    return [{"price": f"{r['price']:.2f}", "date": r["created"][:10]} for r in stored]

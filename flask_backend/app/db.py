@@ -55,6 +55,12 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_history_lookup
                 ON price_history(market, name);
+
+            -- Günde tek nokta: arama her yapıldığında değil, fiyat o gün ilk kez
+            -- görüldüğünde kayıt düşsün. `INSERT OR IGNORE` bu indeksle çalışır,
+            -- böylece tekilleştirme için ayrıca SELECT atmaya gerek kalmaz.
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_history_daily
+                ON price_history(market, name, date(created));
             """
         )
 
@@ -71,8 +77,12 @@ def add_crowd_price(city: str, market: str, name: str, price: float, image: str 
             "INSERT INTO crowd_prices(city, market, name, price, image) VALUES(?,?,?,?,?)",
             (fold(city), market.strip(), name.strip(), float(price), image),
         )
+        # `OR REPLACE`: `idx_history_daily` günde tek nokta dayatıyor ve düz
+        # INSERT, aynı ürüne aynı gün ikinci fiyat gönderildiğinde isteği
+        # IntegrityError ile düşürüyordu. Ulusal kaynağın aksine burada **son**
+        # gönderim kazanır: kullanıcı çoğu zaman hatalı okumasını düzeltiyordur.
         conn.execute(
-            "INSERT INTO price_history(market, name, price) VALUES(?,?,?)",
+            "INSERT OR REPLACE INTO price_history(market, name, price) VALUES(?,?,?)",
             (market.strip(), name.strip(), float(price)),
         )
 
@@ -98,23 +108,39 @@ def latest_crowd_prices(city: str, name: str) -> list[dict]:
 
 
 def price_history(market: str, name: str, limit: int = 50) -> list[dict]:
+    """Tek bir market+ürünün zaman içindeki fiyat noktaları.
+
+    Eşleşme **tam**, `LIKE '%ad%'` değil: joker eşleşme "süt" sorgusuna
+    "Sek Süt 200 Ml", "Danone Çilekli Süt" gibi farklı ürünlerin fiyatlarını
+    tek seriye karıştırıyordu. Karışık ürünlerden çizilen bir grafik fiyat
+    geçmişi değil, gürültü. İstemci zaten ürünün tam adını gönderiyor.
+    """
     with _lock, _conn() as conn:
         rows = conn.execute(
             """
             SELECT price, created FROM price_history
-            WHERE market = ? AND name LIKE ?
+            WHERE market = ? AND name = ?
             ORDER BY created ASC
             LIMIT ?
             """,
-            (market.strip(), f"%{name.strip()}%", limit),
+            (market.strip(), name.strip(), limit),
         ).fetchall()
         return [dict(r) for r in rows]
 
 
-def record_history(market: str, name: str, price: float) -> None:
-    """Scraping/mock sonuçlarını da geçmişe işler (grafik için veri birikir)."""
+def record_daily_prices(rows: list[tuple[str, str, float]]) -> None:
+    """Ulusal kaynaktan taze çekilen fiyatları geçmişe işler.
+
+    `rows`: (market, ürün adı, fiyat) üçlüleri. Aynı market+ürün için o gün zaten
+    bir kayıt varsa `idx_history_daily` sayesinde sessizce atlanır — grafik günde
+    tek nokta ilerler, arama sayısından bağımsız.
+
+    Tek bir işlemde (transaction) yazılır: bir arama onlarca satır üretebiliyor.
+    """
+    if not rows:
+        return
     with _lock, _conn() as conn:
-        conn.execute(
-            "INSERT INTO price_history(market, name, price) VALUES(?,?,?)",
-            (market.strip(), name.strip(), float(price)),
+        conn.executemany(
+            "INSERT OR IGNORE INTO price_history(market, name, price) VALUES(?,?,?)",
+            [(m.strip(), n.strip(), float(p)) for m, n, p in rows],
         )
