@@ -23,10 +23,12 @@ class Config:
 
     # Veri kaynağı davranışı
     # USE_MOCK=true  -> her zaman örnek (mock) veri döndürülür, ağ isteği yapılmaz.
-    # USE_MOCK=false -> gerçek kaynak denenir; hata olursa mock veriye düşülür
-    #                   (MOCK_FALLBACK=true iken).
+    # USE_MOCK=false -> gerçek kaynak kullanılır. Yalnızca **ağ/şema hatasında**
+    #                   ve MOCK_FALLBACK=true iken mock'a düşülür; sonuç boşsa
+    #                   asla düşülmez (uydurma ürün, boş ekrandan kötü).
+    # MOCK_FALLBACK varsayılanı false: örnek veri gerçek fiyat gibi görünmesin.
     USE_MOCK = _as_bool(os.getenv("USE_MOCK"), default=True)
-    MOCK_FALLBACK = _as_bool(os.getenv("MOCK_FALLBACK"), default=True)
+    MOCK_FALLBACK = _as_bool(os.getenv("MOCK_FALLBACK"), default=False)
 
     # --- Ulusal fiyat kaynağı -------------------------------------------
     # Zincir marketlerin mevzuat gereği bildirdiği, TÜBİTAK BİLGEM tarafından
@@ -37,7 +39,10 @@ class Config:
     )
     # Şehir merkezinden kaç km yarıçapındaki şubeler taransın.
     MARKETFIYATI_DISTANCE_KM = float(os.getenv("MARKETFIYATI_DISTANCE_KM", "15"))
-    MARKETFIYATI_PAGE_SIZE = int(os.getenv("MARKETFIYATI_PAGE_SIZE", "24"))
+    # 24 azdı: kaynak kendi alaka sırasıyla ilk sayfayı döndürüyor ve "domates"
+    # gibi geniş sorgularda öbür marketlerin taze ürünü sayfaya sığmıyordu —
+    # kullanıcı "diğer marketler yok" sanıyordu.
+    MARKETFIYATI_PAGE_SIZE = int(os.getenv("MARKETFIYATI_PAGE_SIZE", "60"))
 
     # Eski doğrudan-scraping akışı. Varsayılan KAPALI: market sitelerini kazımak
     # TTK m.55 haksız rekabet, sui generis veritabanı hakkı ve site kullanım

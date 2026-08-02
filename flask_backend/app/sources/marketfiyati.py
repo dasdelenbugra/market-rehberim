@@ -133,9 +133,10 @@ class MarketFiyatiSource:
         try:
             payload = self._request(query, latitude, longitude)
             items = self._parse(payload)
-            if not items and Config.MOCK_FALLBACK:
-                logger.warning("marketfiyati: '%s' için sonuç yok, mock'a düşülüyor", query)
-                return self._mock(query), None
+            # Sonuç boşsa boş döner — mock'a DÜŞÜLMEZ. "Bisiklet" aramasında
+            # kaynak haklı olarak hiçbir şey bulmuyordu; eski davranış
+            # "Bisiklet 1 - ŞOK" gibi uydurma ürünler üretip gerçekmiş gibi
+            # gösteriyordu. Uydurma fiyat, boş ekrandan her zaman daha kötü.
             return items, self._latest_index_time(payload)
         except Exception as exc:  # ağ/şema hatasını yut, servisi ayakta tut
             logger.warning("marketfiyati kaynak hatası (%s): %s", query, exc)
