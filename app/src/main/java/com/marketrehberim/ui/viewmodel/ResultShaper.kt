@@ -68,10 +68,27 @@ object ResultShaper {
         )
     }
 
+    /**
+     * Özet satırındaki "en ucuz" fiyat: rozeti alan grubun **paket** fiyatı.
+     *
+     * Kazanan, birim fiyata göre seçilir (bkz. `comparablePriceValue`) ama
+     * gösterilen sayı satırdaki büyük fiyatla aynı olmalı — özet 94 ₺/kg'lik
+     * birim fiyat yazsaydı kullanıcı listede o sayıyı bulamazdı.
+     */
+    fun summaryPrice(groups: List<ProductGroup>, market: String?): Double? {
+        val filtered = groups.mapNotNull { it.restrictTo(market) }
+        val pool = filtered.filter { it.relevance == RELEVANCE_HEAD }.ifEmpty { filtered }
+        return pool.minByOrNull { it.comparablePriceValue }
+            ?.bestPriceValue
+            ?.takeIf { it != Double.MAX_VALUE }
+    }
+
     private fun List<ProductGroup>.sortedBy(order: SortOrder): List<ProductGroup> =
         when (order) {
-            SortOrder.PRICE_ASC -> sortedBy { it.bestPriceValue }
-            SortOrder.PRICE_DESC -> sortedByDescending { it.bestPriceValue }
+            // Birim fiyat öncelikli: 350 gr'lık paket, ucuz göründüğü için
+            // 1 kg'ın üstüne çıkmasın (bkz. ProductGroup.comparablePriceValue).
+            SortOrder.PRICE_ASC -> sortedBy { it.comparablePriceValue }
+            SortOrder.PRICE_DESC -> sortedByDescending { it.comparablePriceValue }
             // Locale.ROOT: Türkçe yerelde "I"/"ı" kuralı A-Z sıralamasını bozar.
             SortOrder.NAME -> sortedBy { it.name.lowercase(Locale.ROOT) }
         }

@@ -91,6 +91,17 @@ data class ProductGroup(
 ) {
     val bestPriceValue: Double get() = bestPrice.toDoubleOrNull() ?: Double.MAX_VALUE
 
+    /**
+     * Sıralama ve "EN UCUZ" rozeti için karşılaştırma anahtarı: birim fiyat
+     * (₺/kg, ₺/L) varsa o, yoksa paket fiyatı.
+     *
+     * Paket fiyatıyla karşılaştırınca 350 gr havuç (32,90 ₺ → 94 ₺/kg) rozeti
+     * 1 kg havuçtan (35 ₺ → 35 ₺/kg) çalıyordu; kullanıcı "en ucuz" diye
+     * kilosu üç kat pahalı ürünü görüyordu.
+     */
+    val comparablePriceValue: Double
+        get() = unitPrice?.toDoubleOrNull() ?: bestPriceValue
+
     /** Detaya geçerken taşınan kayıt: grubun en ucuz teklifi. */
     val cheapestOffer: Item?
         get() = offers.minByOrNull { it.priceValue }

@@ -133,16 +133,24 @@ class SearchViewModel @Inject constructor(
 
     /** Ekrandaki ürün grubu sayısı — üstteki özet satırı bunu yazar. */
     val visibleGroupCount: Int
-        get() = rawGroups.count { selectedMarket == null || it.offers.any { o -> o.from == selectedMarket } }
+        get() = matchingGroups.size
 
-    /** Sonuçlardaki en düşük fiyat; filtre uygulanmış haliyle. */
+    /**
+     * Özet satırındaki "en ucuz" fiyat.
+     *
+     * Yalnız **ana bölümdeki** ürünlere bakar (katlanmış "ilgili ürünler"in
+     * fiyatı ekranda görünmez) ve "EN UCUZ" rozetini alan grubun paket
+     * fiyatını döndürür — rozet, özet ve satır aynı sayıyı söylemeli.
+     * Hesap ResultShaper'da: rozet/sıralamayla aynı kuralı paylaşır.
+     */
     val cheapestVisiblePrice: Double?
-        get() = rawGroups
-            .flatMap { it.offers }
-            .filter { selectedMarket == null || it.from == selectedMarket }
-            .map { it.priceValue }
-            .filter { it != Double.MAX_VALUE }
-            .minOrNull()
+        get() = ResultShaper.summaryPrice(rawGroups, selectedMarket)
+
+    /** Market filtresinden geçen gruplar. */
+    private val matchingGroups: List<ProductGroup>
+        get() = rawGroups.filter { group ->
+            selectedMarket == null || group.offers.any { it.from == selectedMarket }
+        }
 
     private fun emitDisplayed() {
         _searchResults.value = UIItemState.Success(

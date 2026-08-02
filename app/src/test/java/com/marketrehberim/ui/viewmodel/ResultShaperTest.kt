@@ -168,4 +168,53 @@ class ResultShaperTest {
     fun `filtre ile eslesmeyen grup tamamen duser`() {
         assertEquals(emptyList<String>(), names(shape(mixed, market = "CarrefourSA")))
     }
+
+    // --- Birim fiyat öncelikli sıralama ------------------------------------
+
+    /**
+     * Kullanıcının bildirdiği somut hata: 350 gr havuç 32,90 ₺ (94 ₺/kg) paket
+     * fiyatıyla 1 kg 35 ₺'lik havucun (35 ₺/kg) üstüne çıkıp "EN UCUZ" oluyordu.
+     */
+    private val havuc = listOf(
+        group("Havuç Paket 350 Gr", offers = arrayOf(offer("A101", "32.90")))
+            .copy(unitPrice = "94.00", unit = "kg"),
+        group("Havuç 1 Kg", offers = arrayOf(offer("BİM", "35.00")))
+            .copy(unitPrice = "35.00", unit = "kg"),
+        group("Mini Havuç 1 Adet", offers = arrayOf(offer("CarrefourSA", "229.90"))),
+    )
+
+    @Test
+    fun `birim fiyati dusuk olan pakete gore ucuz gorunse de one gecer`() {
+        assertEquals(
+            listOf("Havuç 1 Kg", "Havuç Paket 350 Gr", "Mini Havuç 1 Adet"),
+            names(shape(havuc)),
+        )
+    }
+
+    /** Birim fiyatı olmayan grup paket fiyatıyla yarışır; listeden düşmez. */
+    @Test
+    fun `birim fiyatsiz grup paket fiyatiyla siralanir`() {
+        val rows = names(shape(havuc, order = SortOrder.PRICE_DESC))
+        assertEquals("Havuç 1 Kg", rows.last())
+    }
+
+    /**
+     * Özet "en ucuz" fiyatı, rozeti alan grubun **paket** fiyatını söylemeli:
+     * kazanan birim fiyata göre seçilir ama ekrandaki sayıyla aynı olmalı.
+     */
+    @Test
+    fun `ozet fiyati rozeti alan grubun paket fiyatidir`() {
+        assertEquals(35.00, ResultShaper.summaryPrice(havuc, market = null)!!, 0.001)
+    }
+
+    @Test
+    fun `ozet fiyati market filtresine uyar`() {
+        assertEquals(32.90, ResultShaper.summaryPrice(havuc, market = "A101")!!, 0.001)
+    }
+
+    @Test
+    fun `ozet ana bolum bos ise ilgili urunlerden hesaplanir`() {
+        val onlyRelated = mixed.filter { it.relevance != ResultShaper.RELEVANCE_HEAD }
+        assertEquals(8.00, ResultShaper.summaryPrice(onlyRelated, market = null)!!, 0.001)
+    }
 }

@@ -30,8 +30,10 @@ class ProductGroupAdapter(
 ) : ListAdapter<SearchRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     /**
-     * Ana bölümdeki en düşük fiyat. "EN UCUZ" rozeti yalnız burada anlamlı:
-     * ilgili ürünler bölümündeki gofretle muzu kıyaslamak yanlış olurdu.
+     * Ana bölümdeki en düşük **karşılaştırma** fiyatı (birim fiyat öncelikli,
+     * bkz. ProductGroup.comparablePriceValue). "EN UCUZ" rozeti yalnız burada
+     * anlamlı: ilgili ürünler bölümündeki gofretle muzu kıyaslamak yanlış
+     * olurdu; paket fiyatıyla kıyaslamak da 350 gr'a rozet takıyordu.
      */
     private var cheapestMain: Double = Double.MAX_VALUE
 
@@ -45,7 +47,7 @@ class ProductGroupAdapter(
             // Başlıktan sonrası "ilgili ürünler"; rozet yarışına girmezler.
             .takeWhile { it !is SearchRow.RelatedHeader }
             .filterIsInstance<SearchRow.Product>()
-            .map { it.group.bestPriceValue }
+            .map { it.group.comparablePriceValue }
             .minOrNull() ?: Double.MAX_VALUE
     }
 
@@ -84,14 +86,14 @@ class ProductGroupAdapter(
             binding.marketDot.backgroundTintList =
                 ColorStateList.valueOf(MarketPalette.colorFor(context, group.bestMarket))
 
-            val isCheapest = group.bestPriceValue == cheapestMain &&
-                group.bestPriceValue != Double.MAX_VALUE
+            val isCheapest = group.comparablePriceValue == cheapestMain &&
+                group.comparablePriceValue != Double.MAX_VALUE
             binding.tvCheapest.visibility = if (isCheapest) View.VISIBLE else View.GONE
             binding.price.setTextColor(
                 MaterialColors.getColor(
                     binding.root,
                     if (isCheapest) com.google.android.material.R.attr.colorPrimary
-                    else com.google.android.material.R.attr.colorSecondary,
+                    else com.google.android.material.R.attr.colorTertiary,
                 )
             )
 
@@ -144,8 +146,13 @@ class ProductGroupAdapter(
         fun bind(row: SearchRow.RelatedHeader) {
             binding.tvRelatedTitle.text =
                 binding.root.context.getString(R.string.related_products, row.count)
-            // Kapalıyken aşağı, açıkken yukarı bakar.
-            binding.ivChevron.rotation = if (row.expanded) 180f else 0f
+            // Kapalıyken aşağı, açıkken yukarı bakar. Dokunuşta ok atlamak
+            // yerine dönsün; geri dönüşümde yarım kalmış animasyon iptal edilir.
+            val target = if (row.expanded) 180f else 0f
+            binding.ivChevron.animate().cancel()
+            if (binding.ivChevron.rotation != target) {
+                binding.ivChevron.animate().rotation(target).setDuration(200L).start()
+            }
             binding.root.setOnClickListener { onToggle() }
         }
     }
