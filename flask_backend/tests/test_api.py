@@ -12,15 +12,40 @@ def test_health(client):
     assert resp.get_json()["status"] == "ok"
 
 
-def test_cities(client):
+def test_cities_all_81_provinces(client):
     data = client.get("/cities").get_json()
+    assert len(data) == 81
     assert any(c["key"] == "tokat" for c in data)
+    # Yerel marketi kayıtlı olmayan il de listede olmalı.
+    assert any(c["key"] == "hakkari" for c in data)
+
+
+def test_cities_sorted_turkish_alphabet(client):
+    """`sorted()` Unicode sırası kullanır ve Ç/İ/Ş'yi Z'nin arkasına atar;
+    liste Türk alfabesine göre gelmeli."""
+    labels = [c["label"] for c in client.get("/cities").get_json()]
+    assert labels.index("Çanakkale") == labels.index("Bursa") + 1
+    assert labels.index("İstanbul") == labels.index("Isparta") + 1
+    assert labels.index("Şanlıurfa") == labels.index("Sivas") + 1
 
 
 def test_markets_for_city(client):
     data = client.get("/markets/tokat").get_json()
     assert "Migros" in data["national"]
     assert "Erenler" in data["local"]
+
+
+def test_markets_respect_national_coverage(client):
+    """Sivas'ta Hakmar (Marmara zinciri) listelenmemeli; İstanbul'da listelenmeli
+    ama yerel listede ikinci kez görünmemeli."""
+    sivas = client.get("/markets/sivas").get_json()
+    assert "Hakmar" not in sivas["national"]
+    assert "CarrefourSA" not in sivas["national"]
+    assert "BİM" in sivas["national"]
+
+    ist = client.get("/markets/istanbul").get_json()
+    assert "Hakmar" in ist["national"]
+    assert "Hakmar" not in ist["local"]
 
 
 def test_search_aggregates_markets(client):
