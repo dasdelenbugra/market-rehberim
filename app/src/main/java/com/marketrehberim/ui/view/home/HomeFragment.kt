@@ -155,10 +155,12 @@ class HomeFragment : Fragment() {
         // Şehir listesi backend'den gelir; boşsa sheet sessizce boş görünmesin.
         sheetBinding.tvCitiesEmpty.visibility = if (cities.isEmpty()) View.VISIBLE else View.GONE
 
+        var selectedRow: View? = null
         cities.forEach { city ->
             val row = ItemCityRowBinding.inflate(layoutInflater, sheetBinding.cityContainer, false)
             row.tvCityLabel.text = city.label
             row.ivSelected.visibility = if (city.label == current) View.VISIBLE else View.GONE
+            if (city.label == current) selectedRow = row.root
             row.root.setOnClickListener {
                 viewModel.selectCity(city)
                 sheet.dismiss()
@@ -173,6 +175,15 @@ class HomeFragment : Fragment() {
 
         sheet.setContentView(sheetBinding.root)
         sheet.show()
+
+        // 81 ilde seçili şehir listenin ortasında kaybolur; sheet açılınca
+        // görünür olsun. `post` şart: satırlar henüz ölçülmeden `top` hep 0.
+        selectedRow?.let { row ->
+            sheetBinding.root.post {
+                val y = sheetBinding.cityContainer.top + row.top - row.height * 2
+                sheetBinding.root.smoothScrollTo(0, maxOf(0, y))
+            }
+        }
     }
 
     // --- Konumdan şehir tespiti ---
@@ -265,12 +276,24 @@ class HomeFragment : Fragment() {
         val options = NavOptions.Builder()
             .setLaunchSingleTop(true)
             .setPopUpTo(R.id.homeFragment, /* inclusive = */ false, /* saveState = */ true)
+            .setEnterAnim(R.anim.nav_enter)
+            .setExitAnim(R.anim.nav_exit)
+            .setPopEnterAnim(R.anim.nav_pop_enter)
+            .setPopExitAnim(R.anim.nav_pop_exit)
             .build()
         findNavController().navigate(R.id.searchFragment, bundleOf("query" to query), options)
     }
 
     private fun openDetail(item: Item) {
-        findNavController().navigate(R.id.productDetailFragment, bundleOf("item" to item))
+        // Arama ekranındaki detay geçişiyle aynı animasyon; iki yol farklı
+        // hissettirmesin.
+        val options = NavOptions.Builder()
+            .setEnterAnim(R.anim.nav_enter)
+            .setExitAnim(R.anim.nav_exit)
+            .setPopEnterAnim(R.anim.nav_pop_enter)
+            .setPopExitAnim(R.anim.nav_pop_exit)
+            .build()
+        findNavController().navigate(R.id.productDetailFragment, bundleOf("item" to item), options)
     }
 
     private fun showMessage(message: String) {

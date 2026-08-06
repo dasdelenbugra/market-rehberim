@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sekme geçişinde çıkan ekran hızla solar; giren ekran bunun bitmesini
+     bekleyip belirir (bkz. nav_tab_enter'daki startOffset). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <alpha
+        android:duration="90"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+</set>

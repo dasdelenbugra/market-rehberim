@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ============ Açık tema — Material 3 tonal palet ============ -->
-    <!-- Marka: taze yeşil + fiyat için sıcak turuncu aksan -->
+    <!-- Marka: taze yeşil. Rol dağılımı:
+         secondary = sakin adaçayı yeşili — tonal buton/çip zemini ("Tokat",
+                     "Sırala", seçili filtre). Eskiden şeftali pembesiydi ve
+                     yeşil temanın içinde reklam bandı gibi duruyordu.
+         tertiary  = toprak kızılı — fiyat, favori kalbi gibi sıcak vurgular.
+                     Marka yeşiliyle kavga etmeden dikkat çeker. -->
     <color name="primary">#2E7D32</color>
     <color name="on_primary">#FFFFFF</color>
     <color name="primary_container">#AEF0A6</color>
     <color name="on_primary_container">#00210A</color>
 
-    <color name="secondary">#B83A16</color>
+    <color name="secondary">#52634F</color>
     <color name="on_secondary">#FFFFFF</color>
-    <color name="secondary_container">#FFDBCF</color>
-    <color name="on_secondary_container">#3B0A00</color>
+    <color name="secondary_container">#D5E8CF</color>
+    <color name="on_secondary_container">#101F10</color>
 
-    <color name="tertiary">#8A6D00</color>
+    <color name="tertiary">#A0451F</color>
     <color name="on_tertiary">#FFFFFF</color>
-    <color name="tertiary_container">#FFE08B</color>
-    <color name="on_tertiary_container">#2B2000</color>
+    <color name="tertiary_container">#FFDBCC</color>
+    <color name="on_tertiary_container">#380D00</color>
 
     <!-- Zemin: düz beyaz değil, hafif yeşil tonlu yumuşak bir yüzey -->
     <color name="background">#F6FAF1</color>

@@ -6,15 +6,17 @@
     <color name="primary_container">#105318</color>
     <color name="on_primary_container">#AEF0A6</color>
 
-    <color name="secondary">#FFB59B</color>
-    <color name="on_secondary">#5F1600</color>
-    <color name="secondary_container">#8C2A0E</color>
-    <color name="on_secondary_container">#FFDBCF</color>
+    <!-- Rol dağılımı için bkz. values/colors.xml: secondary = adaçayı
+         (tonal buton/çip), tertiary = toprak kızılı (fiyat vurgusu). -->
+    <color name="secondary">#B8CCB0</color>
+    <color name="on_secondary">#243424</color>
+    <color name="secondary_container">#3A4B37</color>
+    <color name="on_secondary_container">#D5E8CF</color>
 
-    <color name="tertiary">#EAC248</color>
-    <color name="on_tertiary">#3B2F00</color>
-    <color name="tertiary_container">#685100</color>
-    <color name="on_tertiary_container">#FFE08B</color>
+    <color name="tertiary">#FFB59B</color>
+    <color name="on_tertiary">#5F1600</color>
+    <color name="tertiary_container">#7C2D12</color>
+    <color name="on_tertiary_container">#FFDBCF</color>
 
     <!-- Zengin koyu zemin (saf siyah değil) -->
     <color name="background">#101510</color>

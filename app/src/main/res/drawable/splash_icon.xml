@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Açılış animasyonu (Android 12+; öncesinde ikon durağan görünür):
+     1) İkon zıplayarak büyür, 2) gölge yere düşer, 3) tente yukarıdan açılır,
+     4) vitrin ışığı yanar — "dükkân açılıyor" anlatısı.
+     Hedef adları ic_splash_storefront.xml'de tanımlı. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:drawable="@drawable/ic_splash_storefront">
@@ -7,16 +11,16 @@
         <aapt:attr name="android:animation">
             <set android:ordering="together">
                 <objectAnimator
-                    android:duration="500"
+                    android:duration="550"
                     android:propertyName="scaleX"
-                    android:valueFrom="0.5"
+                    android:valueFrom="0.55"
                     android:valueTo="1.0"
                     android:valueType="floatType"
                     android:interpolator="@android:interpolator/overshoot" />
                 <objectAnimator
-                    android:duration="500"
+                    android:duration="550"
                     android:propertyName="scaleY"
-                    android:valueFrom="0.5"
+                    android:valueFrom="0.55"
                     android:valueTo="1.0"
                     android:valueType="floatType"
                     android:interpolator="@android:interpolator/overshoot" />
@@ -24,11 +28,40 @@
         </aapt:attr>
     </target>
 
-    <target android:name="store">
+    <target android:name="shadow">
         <aapt:attr name="android:animation">
             <objectAnimator
-                android:duration="420"
+                android:duration="300"
                 android:propertyName="fillAlpha"
+                android:startOffset="200"
+                android:valueFrom="0.0"
+                android:valueTo="1.0"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </aapt:attr>
+    </target>
+
+    <!-- Tente üst çubuğundan aşağı açılır (pivot barın üstünde) -->
+    <target android:name="awning">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="450"
+                android:propertyName="scaleY"
+                android:startOffset="280"
+                android:valueFrom="0.15"
+                android:valueTo="1.0"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/overshoot" />
+        </aapt:attr>
+    </target>
+
+    <!-- Vitrin ışığı en son yanar -->
+    <target android:name="glass">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="fillAlpha"
+                android:startOffset="600"
                 android:valueFrom="0.0"
                 android:valueTo="1.0"
                 android:valueType="floatType"

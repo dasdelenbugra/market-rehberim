@@ -90,7 +90,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="monospace"
                             android:textAppearance="?attr/textAppearanceDisplaySmall"
-                            android:textColor="?attr/colorSecondary"
+                            android:textColor="?attr/colorTertiary"
                             android:textStyle="bold"
                             tools:text="38,50 ₺" />
 
@@ -290,7 +290,7 @@
             app:icon="@drawable/ic_favorite_border"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
-            app:iconTint="?attr/colorSecondary" />
+            app:iconTint="?attr/colorTertiary" />
     </FrameLayout>
 
     <!-- Alt sabit çubuk: detay ile sepet akışı arasındaki kopukluğu kapatır -->

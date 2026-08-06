@@ -45,7 +45,7 @@ class ProductCompareAdapter : ListAdapter<Item, ProductCompareAdapter.VH>(DIFF) 
                 binding.root, com.google.android.material.R.attr.colorOutlineVariant
             )
             val priceColor = MaterialColors.getColor(
-                binding.root, com.google.android.material.R.attr.colorSecondary
+                binding.root, com.google.android.material.R.attr.colorTertiary
             )
 
             binding.price.setTextColor(if (isCheapest) gainColor else priceColor)

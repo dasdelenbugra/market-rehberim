@@ -49,7 +49,8 @@
     <style name="TextAppearance.MarketRehberim.Price" parent="TextAppearance.Material3.TitleMedium">
         <item name="android:fontFamily">monospace</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">?attr/colorSecondary</item>
+        <!-- Sıcak vurgu rolü tertiary'de (bkz. colors.xml rol dağılımı) -->
+        <item name="android:textColor">?attr/colorTertiary</item>
     </style>
 
     <style name="TextAppearance.MarketRehberim.Price.Large" parent="TextAppearance.MarketRehberim.Price">

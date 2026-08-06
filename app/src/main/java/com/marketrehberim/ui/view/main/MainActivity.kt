@@ -15,6 +15,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -40,9 +42,21 @@ class MainActivity : AppCompatActivity() {
     /** Rozet animasyonu yalnız artışta oynasın diye önceki sayı tutuluyor. */
     private var lastBasketCount = 0
 
+    /**
+     * Splash, ikon animasyonu (~860 ms) bitene kadar ekranda tutulur. Uygulama
+     * ilk kareyi çok hızlı çizdiği için splash animasyonun ortasında kapanıyor,
+     * "dükkân açılıyor" anlatısı yarıda kesiliyordu.
+     */
+    private var holdSplash = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { holdSplash }
+        lifecycleScope.launch {
+            kotlinx.coroutines.delay(900L)
+            holdSplash = false
+        }
         setupSplashExit(splashScreen)
         bindingCodes()
         defaultActivityCodes()
@@ -88,8 +102,46 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigationView = binding.bottomNavigationView
         bottomNavigationView.setupWithNavController(navHostFragment.navController)
+        animateTabSwitches()
 
         observeBasketBadge()
+    }
+
+    /**
+     * Sekme geçişlerine "fade through" animasyonu.
+     *
+     * `setupWithNavController` geçişleri animasyonsuz yapar ve kendi tıklama
+     * dinleyicisini kurar; burada o dinleyici, **aynı** gezinme davranışını
+     * (yığını başlangıç hedefine kadar durum saklayarak boşalt + durumu geri
+     * yükle) koruyan ama animasyon da veren bir kopyayla değiştirilir.
+     * `setupWithNavController` çağrısı yine de gerekli: hedef değişince seçili
+     * sekmeyi güncelleyen dinleyicisi ayrı yaşar ve burada bozulmaz.
+     */
+    private fun animateTabSwitches() {
+        val navController = navHostFragment.navController
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            val options = NavOptions.Builder()
+                .setLaunchSingleTop(true)
+                .setRestoreState(true)
+                .setPopUpTo(
+                    navController.graph.findStartDestination().id,
+                    /* inclusive = */ false,
+                    /* saveState = */ true,
+                )
+                .setEnterAnim(R.anim.nav_tab_enter)
+                .setExitAnim(R.anim.nav_tab_exit)
+                .setPopEnterAnim(R.anim.nav_tab_enter)
+                .setPopExitAnim(R.anim.nav_tab_exit)
+                .build()
+            try {
+                navController.navigate(item.itemId, null, options)
+                true
+            } catch (_: IllegalArgumentException) {
+                false
+            }
+        }
+        // Zaten açık sekmeye dokununca yeniden gezinme (ve animasyon) olmasın.
+        bottomNavigationView.setOnItemReselectedListener { }
     }
 
     /** Sepet sekmesindeki sayaç. Ürün eklendiğinde tek geri bildirim buydu, yoktu. */
@@ -98,13 +150,15 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 basketStore.items.collect { items ->
                     val badge = bottomNavigationView.getOrCreateBadge(R.id.basketFragment)
+                    // Rozet için standart Material kırmızısı: secondary artık
+                    // sakin bir yüzey tonu, sayaç onunla görünmez olurdu.
                     badge.backgroundColor = MaterialColors.getColor(
                         bottomNavigationView,
-                        com.google.android.material.R.attr.colorSecondary,
+                        com.google.android.material.R.attr.colorError,
                     )
                     badge.badgeTextColor = MaterialColors.getColor(
                         bottomNavigationView,
-                        com.google.android.material.R.attr.colorOnSecondary,
+                        com.google.android.material.R.attr.colorOnError,
                     )
                     badge.isVisible = items.isNotEmpty()
                     badge.number = items.size
