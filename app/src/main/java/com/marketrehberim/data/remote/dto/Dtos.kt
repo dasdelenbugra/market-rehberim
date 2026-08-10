@@ -60,6 +60,19 @@ data class OptimalLine(
     val price: String?,
 )
 
+/**
+ * GET /barcode/<city>/<code>
+ *
+ * Düz liste değil nesne dönüyor: `/search` bir sorgu metniyle çağrılır, istemci
+ * ne aradığını bilir. Barkodda bilmiyor — ekranda "şu ürünü okudum" diyebilmesi
+ * için çözümlenen ad da gerekiyor.
+ */
+data class BarcodeResponse(
+    val barcode: String,
+    val product: String,
+    val items: List<Item> = emptyList(),
+)
+
 /** GET /history/<market>/<itemName> */
 data class HistoryPoint(
     val price: String,

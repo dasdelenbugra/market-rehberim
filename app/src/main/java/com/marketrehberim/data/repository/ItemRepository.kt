@@ -30,6 +30,22 @@ data class ProductResult(
     val updatedAt: String? = null,
 )
 
+/**
+ * Barkod sorgusunun olası sonuçları.
+ *
+ * Ağ/sunucu hatası buraya girmez; o `Result`'ın hata tarafında taşınır.
+ */
+sealed interface BarcodeLookup {
+    /** Ürün çözümlendi ve şehirde fiyatı var. */
+    data class Found(val product: String, val items: List<Item>) : BarcodeLookup
+
+    /** Barkod tanındı ama seçili şehirde bu ürünün fiyatı yok. */
+    data class NoPrices(val product: String) : BarcodeLookup
+
+    /** Barkod, ürün veritabanında hiç yok (Open Food Facts kapsamı tam değil). */
+    data object UnknownBarcode : BarcodeLookup
+}
+
 /** Backend 2xx dışında yanıt verdi. Kodu, ağ hatasından ayırmak için taşınır. */
 class HttpException(val code: Int) : Exception("HTTP $code")
 
@@ -81,6 +97,27 @@ class ItemRepository @Inject constructor(
                 groups = response.body().orEmpty(),
                 updatedAt = response.headers()["X-Data-Updated"],
             )
+        }
+
+    /**
+     * Barkodu ürüne çevirir ve şehirdeki fiyatlarını getirir.
+     *
+     * Üç sonucu ayırmak, kullanıcıya doğru şeyi söyleyebilmek için: barkod
+     * veritabanında yok / ürün bulundu ama şehirde satılmıyor / bulundu.
+     * Hepsini "sonuç yok"a indirmek, önceki kamera akışının hatasıydı.
+     */
+    suspend fun barcode(city: String, code: String): Result<BarcodeLookup> =
+        runCatching {
+            val response = remote.barcode(city, code)
+            when {
+                response.code() == 404 -> BarcodeLookup.UnknownBarcode
+                !response.isSuccessful -> throw HttpException(response.code())
+                else -> {
+                    val body = response.body() ?: throw HttpException(response.code())
+                    if (body.items.isEmpty()) BarcodeLookup.NoPrices(body.product)
+                    else BarcodeLookup.Found(body.product, body.items)
+                }
+            }
         }
 
     suspend fun cities(): List<CityDto> =

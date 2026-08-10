@@ -7,6 +7,7 @@ import com.marketrehberim.data.location.CityLocator
 import com.marketrehberim.data.model.Item
 import com.marketrehberim.data.remote.dto.CityDto
 import com.marketrehberim.data.remote.dto.MarketsDto
+import com.marketrehberim.data.repository.BarcodeLookup
 import com.marketrehberim.data.repository.FavoritesRepository
 import com.marketrehberim.data.repository.ItemRepository
 import com.marketrehberim.data.repository.SavingSummary
@@ -60,6 +61,15 @@ class HomeViewModel @Inject constructor(
     private fun loadMarkets() {
         viewModelScope.launch { _markets.value = itemRepository.markets(cityStore.cityKey) }
     }
+
+    /**
+     * Okunan barkodu seçili şehirde arar.
+     *
+     * Ağ/sunucu hatası ayrı tutulur: "barkodu tanımadım" demek, internet
+     * yokken yanıltıcı olur.
+     */
+    suspend fun lookupBarcode(code: String): Result<BarcodeLookup> =
+        itemRepository.barcode(cityStore.cityKey, code)
 
     /**
      * Cihaz konumundan ili tespit edip desteklenen bir şehre eşler. Eşleşme

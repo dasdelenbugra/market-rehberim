@@ -9,6 +9,10 @@
     <string name="no_photo">Fotoğraf alınamadı.</string>
     <string name="no_object_detected">Karede tanıdık bir ürün yok. Ürüne yakından deneyin ya da adıyla arayın.</string>
     <string name="product_not_identified">Bir gıda gördüm ama hangisi olduğunu ayırt edemedim. Adıyla aramayı deneyin.</string>
+    <string name="barcode_reading">Barkod okundu, ürün aranıyor…</string>
+    <string name="barcode_unknown">Bu barkod ürün veritabanında yok. Adıyla aramayı deneyin.</string>
+    <string name="barcode_no_prices">%1$s bulundu ama şehrinizde fiyatı yok.</string>
+    <string name="barcode_failed">Barkod sorgulanamadı. Bağlantınızı kontrol edin.</string>
     <string name="recognition_failed">Tanıma sırasında hata oluştu.</string>
     <string name="item_image_desc">Ürün görseli</string>
     <string name="home_title">Market Rehberim</string>

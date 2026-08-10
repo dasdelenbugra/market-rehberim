@@ -1,6 +1,7 @@
 package com.marketrehberim.data.remote
 
 import com.marketrehberim.data.model.Item
+import com.marketrehberim.data.remote.dto.BarcodeResponse
 import com.marketrehberim.data.remote.dto.BasketRequest
 import com.marketrehberim.data.remote.dto.BasketResponse
 import com.marketrehberim.data.remote.dto.CityDto
@@ -37,6 +38,19 @@ interface ItemRemoteSource {
         @Path("city") city: String,
         @Path("itemName") itemName: String,
     ): Response<List<ProductGroup>>
+
+    /**
+     * Barkoddan ürün + fiyatlar.
+     *
+     * `Response<...>` şart: 404 "barkodu tanımadım", 200 + boş `items` ise
+     * "ürünü tanıdım ama bu şehirde fiyatı yok" demek. İkisi kullanıcıya farklı
+     * şey söylüyor, gövdeye bakmak ayırt etmeye yetmez.
+     */
+    @GET("barcode/{city}/{code}")
+    suspend fun barcode(
+        @Path("city") city: String,
+        @Path("code") code: String,
+    ): Response<BarcodeResponse>
 
     @GET("cities")
     suspend fun cities(): List<CityDto>

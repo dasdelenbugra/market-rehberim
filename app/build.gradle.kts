@@ -112,8 +112,11 @@ dependencies {
     implementation(libs.glide)
 
     // ML Kit — cihaz üstü görüntü etiketleme (nesne tanıma) + metin tanıma (OCR)
+    // + barkod okuma. Barkod, paketli üründe tek güvenilir tanıma yolu:
+    // varsayılan etiketleyicinin 447 etiketlik sözlüğünde ürün adı yok.
     implementation(libs.mlkit.image.labeling)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.barcode.scanning)
 
     // Room — yerel kalıcılık (favoriler, arama geçmişi)
     implementation(libs.androidx.room.runtime)

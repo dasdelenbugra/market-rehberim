@@ -21,12 +21,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.marketrehberim.R
 import com.marketrehberim.data.model.Item
 import com.marketrehberim.data.remote.dto.MarketsDto
+import com.marketrehberim.data.repository.BarcodeLookup
 import com.marketrehberim.databinding.FragmentHomeBinding
 import com.marketrehberim.databinding.ItemCityRowBinding
 import com.marketrehberim.databinding.SheetCityPickerBinding
@@ -65,8 +69,25 @@ class HomeFragment : Fragment() {
             // Kullanıcı çekmekten vazgeçtiyse sessiz kal — bu bir hata değil.
             if (!saved) return@registerForActivityResult
             val bitmap = photoFile?.let { PhotoCapture.decode(it) }
-            if (bitmap != null) recognize(bitmap) else showMessage(getString(R.string.no_photo))
+            if (bitmap != null) analyze(bitmap) else showMessage(getString(R.string.no_photo))
         }
+
+    /**
+     * Yalnız ürün barkodu biçimleri. QR ve kod-128 bilerek dışarıda: raftaki
+     * afişin QR'ı ya da kasadaki etiket, ürün barkodu sanılıp aratılmasın.
+     */
+    private val barcodeScanner by lazy {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                )
+                .build()
+        )
+    }
 
     private val requestLocation =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -271,8 +292,47 @@ class HomeFragment : Fragment() {
         takePicture.launch(PhotoCapture.uriFor(requireContext(), file))
     }
 
-    private fun recognize(bitmap: Bitmap) {
+    /**
+     * Karede önce barkod aranır, bulunamazsa görüntü etiketlemeye düşülür.
+     *
+     * Sıra önemli: paketli üründe barkod kesin sonuç verir (marka, gramaj,
+     * varyant dahil), etiketleyici ise en iyi ihtimalle "Food" der. Etiketleme
+     * artık yalnız barkodsuz şeyler için — açık meyve, sebze, fırın ürünü.
+     */
+    private fun analyze(bitmap: Bitmap) {
         val image = InputImage.fromBitmap(bitmap, 0)
+        barcodeScanner.process(image)
+            .addOnSuccessListener { barcodes ->
+                val code = barcodes.firstNotNullOfOrNull { barcode ->
+                    barcode.rawValue?.takeIf { it.isNotBlank() }
+                }
+                if (code != null) lookupBarcode(code) else recognize(image)
+            }
+            // Barkod okuyucu çökerse tanıma büsbütün kaybolmasın.
+            .addOnFailureListener { recognize(image) }
+    }
+
+    private fun lookupBarcode(code: String) {
+        showMessage(getString(R.string.barcode_reading))
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.lookupBarcode(code)
+                .onSuccess { lookup ->
+                    when (lookup) {
+                        is BarcodeLookup.Found -> searchFor(lookup.product)
+                        // Ürünü biliyoruz ama şehirde satılmıyor: adını söylemek
+                        // kullanıcıya "okuma yanlış mı" sorusunu cevaplatır.
+                        is BarcodeLookup.NoPrices ->
+                            showMessage(getString(R.string.barcode_no_prices, lookup.product))
+                        BarcodeLookup.UnknownBarcode ->
+                            showMessage(getString(R.string.barcode_unknown))
+                    }
+                }
+                // Ağ hatasında "barkodu tanımadım" demek yanlış olurdu.
+                .onFailure { showMessage(getString(R.string.barcode_failed)) }
+        }
+    }
+
+    private fun recognize(image: InputImage) {
         labeler.process(image)
             .addOnSuccessListener { labels ->
                 val matches = labels.map { LabelTranslator.match(it.text) }
