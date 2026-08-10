@@ -46,8 +46,15 @@ class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
     private val favoriteAdapter = FavoriteAdapter(onClick = ::openDetail)
 
+    /**
+     * Güven eşiği varsayılanın (0,5) üstüne çekildi. Düşük güvenli bir tahminle
+     * arama yapmak, tanıyamadığını söylemekten kötü: kullanıcı alakasız sonucu
+     * uygulamanın hatası sanıyor.
+     */
     private val labeler by lazy {
-        ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+        ImageLabeling.getClient(
+            ImageLabelerOptions.Builder().setConfidenceThreshold(0.7f).build()
+        )
     }
 
     /** Kameranın tam kareyi yazdığı geçici dosya; sonuç dönünce buradan okunur. */
@@ -268,9 +275,19 @@ class HomeFragment : Fragment() {
         val image = InputImage.fromBitmap(bitmap, 0)
         labeler.process(image)
             .addOnSuccessListener { labels ->
-                val label = labels.firstOrNull()?.text
-                if (label.isNullOrBlank()) showMessage(getString(R.string.no_object_detected))
-                else searchFor(LabelTranslator.toTurkishQuery(label))
+                val matches = labels.map { LabelTranslator.match(it.text) }
+                // En güvenli etiket çoğu zaman "Food" gibi bir üst kategoridir;
+                // aranabilir olan ikinci-üçüncü sırada gelebiliyor. Bu yüzden
+                // listede aranabilen ilk etiket seçilir, körlemesine ilki değil.
+                val product = matches.filterIsInstance<LabelMatch.Product>().firstOrNull()
+                when {
+                    product != null -> searchFor(product.query)
+                    // Gıda olduğunu gördük ama ürünü ayıramadık: kullanıcıya
+                    // "hiçbir şey göremedim" demek yanıltıcı olurdu.
+                    matches.any { it is LabelMatch.GenericFood } ->
+                        showMessage(getString(R.string.product_not_identified))
+                    else -> showMessage(getString(R.string.no_object_detected))
+                }
             }
             .addOnFailureListener { showMessage(getString(R.string.recognition_failed)) }
     }

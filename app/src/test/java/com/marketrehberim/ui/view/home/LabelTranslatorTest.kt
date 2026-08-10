@@ -7,18 +7,43 @@ import java.util.Locale
 class LabelTranslatorTest {
 
     @Test
-    fun `bilinen etiketi turkceye cevirir`() {
-        assertEquals("muz", LabelTranslator.toTurkishQuery("Banana"))
+    fun `sozlukte olan urun etiketini turkceye cevirir`() {
+        assertEquals(LabelMatch.Product("ekmek"), LabelTranslator.match("Bread"))
+        assertEquals(LabelMatch.Product("kuskus"), LabelTranslator.match("Couscous"))
     }
 
     @Test
     fun `bosluklari temizler`() {
-        assertEquals("süt", LabelTranslator.toTurkishQuery("  Milk  "))
+        assertEquals(LabelMatch.Product("kahve"), LabelTranslator.match("  Coffee  "))
+    }
+
+    /**
+     * Modelin sözlüğünde ürün adı yok; elma "Fruit", domates "Vegetable",
+     * süt "Food" olarak dönüyor. Bunları aramak kaynakta alakasız sonuç
+     * veriyordu ("meyve" → meyve suyu), o yüzden ayrı bir durum.
+     */
+    @Test
+    fun `ust kategori etiketi urun sayilmaz`() {
+        assertEquals(LabelMatch.GenericFood, LabelTranslator.match("Food"))
+        assertEquals(LabelMatch.GenericFood, LabelTranslator.match("Fruit"))
+        assertEquals(LabelMatch.GenericFood, LabelTranslator.match("Vegetable"))
     }
 
     @Test
-    fun `bilinmeyen etiketi kucuk harfle oldugu gibi kullanir`() {
-        assertEquals("sushi", LabelTranslator.toTurkishQuery("Sushi"))
+    fun `gida disi etiket eslesmez`() {
+        assertEquals(LabelMatch.None, LabelTranslator.match("Bicycle"))
+        assertEquals(LabelMatch.None, LabelTranslator.match("Shetland sheepdog"))
+    }
+
+    /**
+     * Modelin üretemeyeceği etiketler tabloya girmemeli: çevirisi varmış gibi
+     * durur, testi geçer, sahada hiç tetiklenmez. Sözlükte "Banana" yok.
+     */
+    @Test
+    fun `sozlukte olmayan meyve etiketi tabloda yer almaz`() {
+        assertEquals(LabelMatch.None, LabelTranslator.match("Banana"))
+        assertEquals(LabelMatch.None, LabelTranslator.match("Apple"))
+        assertEquals(LabelMatch.None, LabelTranslator.match("Milk"))
     }
 
     /**
@@ -26,12 +51,12 @@ class LabelTranslatorTest {
      * İngilizce olduğu için eşleşme kaçar. Çeviri cihaz dilinden bağımsız olmalı.
      */
     @Test
-    fun `turkce yerelde I harfli etiket de eslesir`() {
+    fun `turkce yerelde de eslesir`() {
         val default = Locale.getDefault()
         try {
             Locale.setDefault(Locale("tr", "TR"))
-            assertEquals("meyve suyu", LabelTranslator.toTurkishQuery("Juice"))
-            assertEquals("ice cream", LabelTranslator.toTurkishQuery("Ice cream"))
+            assertEquals(LabelMatch.Product("meyve suyu"), LabelTranslator.match("Juice"))
+            assertEquals(LabelMatch.GenericFood, LabelTranslator.match("Picnic"))
         } finally {
             Locale.setDefault(default)
         }

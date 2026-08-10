@@ -7,7 +7,8 @@
     <string name="error_unknown">Beklenmeyen bir hata oldu. Tekrar dene.</string>
     <string name="search_hint">Ara</string>
     <string name="no_photo">Fotoğraf alınamadı.</string>
-    <string name="no_object_detected">Nesne tanınamadı. Tekrar deneyin.</string>
+    <string name="no_object_detected">Karede tanıdık bir ürün yok. Ürüne yakından deneyin ya da adıyla arayın.</string>
+    <string name="product_not_identified">Bir gıda gördüm ama hangisi olduğunu ayırt edemedim. Adıyla aramayı deneyin.</string>
     <string name="recognition_failed">Tanıma sırasında hata oluştu.</string>
     <string name="item_image_desc">Ürün görseli</string>
     <string name="home_title">Market Rehberim</string>
