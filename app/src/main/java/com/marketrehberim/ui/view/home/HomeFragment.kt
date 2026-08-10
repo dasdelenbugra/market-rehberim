@@ -31,10 +31,12 @@ import com.marketrehberim.databinding.FragmentHomeBinding
 import com.marketrehberim.databinding.ItemCityRowBinding
 import com.marketrehberim.databinding.SheetCityPickerBinding
 import com.marketrehberim.ui.adapter.FavoriteAdapter
+import com.marketrehberim.ui.util.PhotoCapture
 import com.marketrehberim.ui.viewmodel.CityDetection
 import com.marketrehberim.ui.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -48,8 +50,14 @@ class HomeFragment : Fragment() {
         ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
     }
 
+    /** Kameranın tam kareyi yazdığı geçici dosya; sonuç dönünce buradan okunur. */
+    private var photoFile: File? = null
+
     private val takePicture =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+            // Kullanıcı çekmekten vazgeçtiyse sessiz kal — bu bir hata değil.
+            if (!saved) return@registerForActivityResult
+            val bitmap = photoFile?.let { PhotoCapture.decode(it) }
             if (bitmap != null) recognize(bitmap) else showMessage(getString(R.string.no_photo))
         }
 
@@ -73,7 +81,7 @@ class HomeFragment : Fragment() {
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.favoritesList.adapter = favoriteAdapter
 
-        binding.fabOpenCamera.setOnClickListener { takePicture.launch(null) }
+        binding.fabOpenCamera.setOnClickListener { openCamera() }
         binding.btnCity.setOnClickListener { showCityPicker() }
 
         observeCity()
@@ -250,6 +258,12 @@ class HomeFragment : Fragment() {
     }
 
     // --- Kamera ile tanıma ---
+    private fun openCamera() {
+        val file = PhotoCapture.newImageFile(requireContext())
+        photoFile = file
+        takePicture.launch(PhotoCapture.uriFor(requireContext(), file))
+    }
+
     private fun recognize(bitmap: Bitmap) {
         val image = InputImage.fromBitmap(bitmap, 0)
         labeler.process(image)

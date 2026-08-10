@@ -31,6 +31,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Kamera uygulamasına, çekilen kareyi yazacağı hedefi vermek için.
+             CAMERA izni bilerek istenmiyor: fotoğrafı ACTION_IMAGE_CAPTURE ile
+             sistem kamerası çekiyor, izni o taşıyor. İzni manifest'e eklemek
+             çalışma anında ayrıca sormayı zorunlu kılardı — karşılığında hiçbir
+             şey kazanmadan. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- WorkManager'ı Hilt'in worker fabrikasıyla kuruyoruz (App: Configuration.Provider);
              varsayılan otomatik başlatıcı devre dışı olmalı. -->
         <provider

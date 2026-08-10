@@ -18,10 +18,12 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.marketrehberim.R
 import com.marketrehberim.databinding.FragmentCrowdsourceBinding
+import com.marketrehberim.ui.util.PhotoCapture
 import com.marketrehberim.ui.viewmodel.CrowdsourceViewModel
 import com.marketrehberim.ui.viewmodel.SubmitOutcome
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Crowdsourced fiyat bildirimi. Web sitesi olmayan yerel marketler için:
@@ -39,9 +41,15 @@ class CrowdsourceFragment : Fragment() {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
+    /** Kameranın tam kareyi yazdığı geçici dosya; sonuç dönünce buradan okunur. */
+    private var photoFile: File? = null
+
     private val takePicture =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-            if (bitmap != null) runOcr(bitmap)
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+            // Kullanıcı çekmekten vazgeçtiyse sessiz kal — bu bir hata değil.
+            if (!saved) return@registerForActivityResult
+            val bitmap = photoFile?.let { PhotoCapture.decode(it) }
+            if (bitmap != null) runOcr(bitmap) else showMessage(getString(R.string.no_photo))
         }
 
     override fun onCreateView(
@@ -57,7 +65,7 @@ class CrowdsourceFragment : Fragment() {
         binding.tvCity.text = getString(R.string.report_subtitle)
         viewModel.loadMarkets()
 
-        binding.btnCapture.setOnClickListener { takePicture.launch(null) }
+        binding.btnCapture.setOnClickListener { openCamera() }
         binding.btnSubmit.setOnClickListener { submit() }
 
         observeMarkets()
@@ -109,6 +117,12 @@ class CrowdsourceFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun openCamera() {
+        val file = PhotoCapture.newImageFile(requireContext())
+        photoFile = file
+        takePicture.launch(PhotoCapture.uriFor(requireContext(), file))
     }
 
     private fun runOcr(bitmap: Bitmap) {

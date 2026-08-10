@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kamera uygulamasının tam çözünürlüklü kareyi yazacağı yer. Önbellek dizini
+  bilerek seçildi: fotoğraf yalnız tanıma/OCR için bir ara adım, kalıcı
+  saklanmasının bir anlamı yok ve sistem yer sıkışınca kendisi temizleyebilir.
+-->
+<paths>
+    <cache-path
+        name="captures"
+        path="." />
+</paths>
