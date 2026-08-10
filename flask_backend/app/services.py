@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from app import cache, db, registry, validation
 from app.models import Item
-from app.sources import NATIONAL_SOURCE
+from app.sources import BARCODE_SOURCE, NATIONAL_SOURCE, BarcodeProduct
 from config import Config
 
 
@@ -108,6 +108,42 @@ def search(city: str, name: str) -> list[Item]:
 
     results.sort(key=lambda it: float(it.price))
     return results
+
+
+def resolve_barcode(barcode: str) -> BarcodeProduct | None:
+    """Barkodu ürün adına çevirir (önbellekli).
+
+    Bir barkodun ürün adı değişmediği için TTL uzun tutulur; aynı rafı tarayan
+    kullanıcılar kaynağa tekrar tekrar gitmesin.
+    """
+    key = f"barcode:{barcode.strip()}"
+    return cache.get_or_set(
+        key,
+        ttl=Config.BARCODE_CACHE_TTL,
+        producer=lambda: BARCODE_SOURCE.resolve(barcode),
+    )
+
+
+def search_by_barcode(city: str, barcode: str) -> tuple[BarcodeProduct | None, list[Item]]:
+    """Barkodu okunan ürünün şehirdeki fiyatları.
+
+    İki adım: barkod → ürün adı (Open Food Facts), ürün adı → fiyatlar (ulusal
+    kaynak). Ürün çözümlenemezse `(None, [])` döner; çağıran bunu "barkodu
+    tanımadım" diye ayırt eder — "ürün var ama fiyat yok" ile aynı şey değil.
+
+    Marka yedeği: tam ad sıfır sonuç verdiğinde yalnız markayla tekrar denenir.
+    Open Food Facts'teki adlar kullanıcı katkısı olduğu için market
+    katalogundakiyle birebir tutmayabiliyor ("Heinz Domates Ketçabı" → 0, ama
+    "Heinz" → ketçap dahil tüm Heinz ürünleri). Yaklaşık sonuç, boş ekrandan iyi.
+    """
+    product = resolve_barcode(barcode)
+    if product is None:
+        return None, []
+
+    items = search(city, product.query)
+    if not items and product.brand and product.brand.lower() != product.query.lower():
+        items = search(city, product.brand)
+    return product, items
 
 
 def _search_many(city: str, names: list[str]) -> list[tuple[str, list[Item]]]:

@@ -6,6 +6,7 @@ Geriye dönük uyumlu tekil-market uçları + yeni sürüm uçları:
     GET  /cities                     -> desteklenen şehirler
     GET  /markets/<city>             -> şehirdeki ulusal + yerel marketler
     GET  /search/<city>/<itemName>   -> birleşik arama (ulusal + crowdsourced)
+    GET  /barcode/<city>/<code>      -> barkoddan ürün + fiyatlar
     POST /prices                     -> crowdsourced fiyat gönder (OCR sonucu)
     POST /basket/optimize            -> sepeti marketler arası optimize et
     GET  /history/<market>/<itemName>-> fiyat geçmişi
@@ -19,6 +20,7 @@ from flask import Blueprint, jsonify, request
 from app import cache, db, products as products_mod, services, validation
 from app import registry
 from app.scrapers import SCRAPERS
+from app.sources import openfoodfacts
 from config import Config
 
 api = Blueprint("api", __name__)
@@ -76,6 +78,38 @@ def products(city: str, item_name: str):
     items = services.search(city, item_name)
     response = jsonify(products_mod.group(items, item_name))
     updated_at = services.national_updated_at(city, item_name)
+    if updated_at:
+        response.headers["X-Data-Updated"] = updated_at
+    return response
+
+
+@api.get("/barcode/<city>/<code>")
+def barcode(city: str, code: str):
+    """Barkodu okunan ürünün şehirdeki fiyatları.
+
+    Gövde neden düz liste değil: `/search` bir sorgu metniyle çağrılır, istemci
+    ne aradığını zaten bilir. Barkodda bilmiyor — ekranda "şu ürünü okudum"
+    diyebilmesi için çözümlenen adı da döndürmek gerekiyor. Yeni bir uç olduğu
+    için nesne döndürmek serbest; `/search`'ün liste sözleşmesi bozulmadı.
+
+    404, "barkodu tanımadım" demektir ve "ürünü tanıdım ama fiyat bulamadım"
+    (200 + boş `items`) durumundan ayrılır — kullanıcıya söylenecek şey farklı.
+    """
+    if not openfoodfacts.is_valid(code):
+        return jsonify({"error": "Geçersiz barkod."}), 400
+
+    product, items = services.search_by_barcode(city, code)
+    if product is None:
+        return jsonify({"error": "Bu barkod veritabanında yok."}), 404
+
+    response = jsonify(
+        {
+            "barcode": product.barcode,
+            "product": product.label,
+            "items": [it.to_dict() for it in items],
+        }
+    )
+    updated_at = services.national_updated_at(city, product.query)
     if updated_at:
         response.headers["X-Data-Updated"] = updated_at
     return response

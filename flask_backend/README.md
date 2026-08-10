@@ -71,6 +71,8 @@ docker run -p 5454:5454 -e USE_MOCK=true market-rehberim-backend
 | `SEARCH_CACHE_TTL` | `21600` | Ulusal sonuç önbelleği (sn). Kaynak günlük tazeleniyor |
 | `MARKETFIYATI_BASE_URL` | `https://api.marketfiyati.org.tr/api/v2` | Ulusal kaynak |
 | `MARKETFIYATI_DISTANCE_KM` | `15` | Şehir merkezinden tarama yarıçapı |
+| `OPENFOODFACTS_BASE_URL` | `https://world.openfoodfacts.org/api/v2` | Barkod → ürün adı kaynağı |
+| `BARCODE_CACHE_TTL` | `604800` | Barkod çözümleme önbelleği (sn). Bir barkodun adı değişmez |
 | `ENABLE_LEGACY_SCRAPERS` | `false` | Eski doğrudan scraping. **Üretimde açmayın** |
 | `REQUEST_TIMEOUT`| `10`      | HTTP istek zaman aşımı (sn) |
 
@@ -91,6 +93,7 @@ docker run -p 5454:5454 -e USE_MOCK=true market-rehberim-backend
 | GET    | `/cities`                       | Desteklenen şehirler |
 | GET    | `/markets/<city>`               | Şehirdeki ulusal + yerel marketler |
 | GET    | `/search/<city>/<itemName>`     | **Birleşik arama** (ulusal scraping + yerel crowdsourced) |
+| GET    | `/barcode/<city>/<code>`        | **Barkoddan ürün + fiyatlar** (Open Food Facts ile çözümlenir) |
 | POST   | `/prices`                       | **Crowdsourced fiyat gönder** (raf etiketi OCR sonucu) |
 | POST   | `/basket/optimize`              | **Sepet optimizasyonu** (marketler arası en ucuz dağıtım) |
 | GET    | `/history/<market>/<itemName>`  | **Fiyat geçmişi** (grafik verisi) |
@@ -111,7 +114,30 @@ curl -X POST http://localhost:5454/prices \
 curl -X POST http://localhost:5454/basket/optimize \
   -H "Content-Type: application/json" \
   -d '{"city":"tokat","items":["süt","ekmek","yumurta"]}'
+
+# Barkodla arama (Ülker Çizi Peynirli Kraker)
+curl http://localhost:5454/barcode/tokat/8690766009205
 ```
+
+### Barkod akışı
+
+Ulusal fiyat kaynağı barkod tutmuyor (`id` alanı `1YG9` gibi opak bir kod ve
+barkodu anahtar kelime olarak aratmak sıfır sonuç veriyor). Bu yüzden barkod iki
+adımda çözülür: **kod → ürün adı** (Open Food Facts, açık veri/ODbL, anahtar
+istemez) → **ürün adı → fiyatlar** (mevcut arama akışı).
+
+Yanıt düz liste değil nesnedir; istemcinin "şu ürünü okudum" diyebilmesi için
+çözümlenen ad da döner. Durum kodları bilinçli olarak ayrıdır:
+
+| Durum | Anlamı |
+|-------|--------|
+| 400   | Barkod biçimi geçersiz (rakam değil / 8-14 hane değil) |
+| 404   | Barkod ürün veritabanında yok |
+| 200 + boş `items` | Ürün tanındı ama şehirde fiyatı yok |
+
+Tam ad sonuç vermezse yalnız markayla tekrar denenir: OFF adları kullanıcı
+katkısı olduğu için market katalogundakiyle birebir tutmayabiliyor
+(`"erikli 0,5 su"` → 0 sonuç, `"Erikli"` → "Erikli Su 500 Ml").
 
 Sepet optimizasyonu çıktısı: her marketin sepet toplamı (`byMarket`) **ve** her ürünü
 en ucuz marketten alma senaryosu (`optimalSplit`).

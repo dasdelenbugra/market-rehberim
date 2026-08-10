@@ -50,6 +50,15 @@ class Config:
     # Yalnız yerel geliştirme/karşılaştırma için açılır.
     ENABLE_LEGACY_SCRAPERS = _as_bool(os.getenv("ENABLE_LEGACY_SCRAPERS"), default=False)
 
+    # --- Barkod çözümleme (Open Food Facts) -----------------------------
+    # Fiyat kaynağı barkod tutmuyor; barkod önce burada ürün adına çevrilir.
+    # Açık veri (ODbL), anahtar gerektirmez. Ayrıntı: app/sources/openfoodfacts.py
+    OPENFOODFACTS_BASE_URL = os.getenv(
+        "OPENFOODFACTS_BASE_URL", "https://world.openfoodfacts.org/api/v2"
+    )
+    # Bir barkodun ürün adı değişmez; kısa TTL kaynağa boşuna yük bindirir.
+    BARCODE_CACHE_TTL = float(os.getenv("BARCODE_CACHE_TTL", "604800"))  # 7 gün
+
     # Ulusal sonuçların önbellek ömrü (saniye). 0 = önbellek kapalı.
     # Kaynak veriyi günlük mertebede tazeliyor; 6 saat tazelik ile kaynağa
     # bindirilen yük arasında makul bir denge (eski varsayılan 15 dk gereksizdi).

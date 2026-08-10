@@ -7,8 +7,18 @@ gereği bildirdiği ve TÜBİTAK BİLGEM tarafından kamuya açılan veriyi kull
 Bkz. `docs/VERI_KAYNAGI.md`.
 """
 from app.sources.marketfiyati import MarketFiyatiSource
+from app.sources.openfoodfacts import BarcodeProduct, OpenFoodFactsSource
 
 #: Varsayılan ulusal kaynak.
 NATIONAL_SOURCE = MarketFiyatiSource()
 
-__all__ = ["MarketFiyatiSource", "NATIONAL_SOURCE"]
+#: Barkod → ürün adı çözümleyicisi. Fiyat kaynağı barkod tutmadığı için ayrı.
+BARCODE_SOURCE = OpenFoodFactsSource()
+
+__all__ = [
+    "MarketFiyatiSource",
+    "NATIONAL_SOURCE",
+    "OpenFoodFactsSource",
+    "BARCODE_SOURCE",
+    "BarcodeProduct",
+]
