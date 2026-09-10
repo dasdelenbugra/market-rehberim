@@ -157,6 +157,36 @@ def test_shortest_name_seeds_the_target_category():
     assert products.target_category(items, "muz") == "Meyve"
 
 
+def test_qualifier_query_forms_a_main_list():
+    """Sorgu ürünü adlandırmıyor, niteliyorsa da ana liste kurulmalı.
+
+    "Tıraş Sonrası Kolonya" adının baş ismi *kolonya*; sorgu "tıraş sonrası".
+    Baş isme bakan kural aday bulamıyor, tohum oluşmuyor ve beş gerçek ürün
+    "ilgili"ye düşüyordu. Sorgunun tamamının adda bitişik geçmesi yeterli
+    sinyaldir.
+    """
+    items = [
+        item("Arko Men Black Tıraş Sonrası Kolonya 255 Ml", "129.00",
+             category="Tıraş Ürünleri"),
+        item("Nivea Men Hassas Tıraş Sonrası Balsam 100 Ml", "189.00",
+             category="Tıraş Ürünleri"),
+    ]
+
+    assert products.target_category(items, "tıraş sonrası") == "Tıraş Ürünleri"
+    groups = products.group(items, "tıraş sonrası")
+    assert all(g["relevance"] == products.RELEVANCE_HEAD for g in groups)
+
+
+def test_phrase_rule_stays_off_for_single_word_queries():
+    """Tek kelimelik sorguda bitişiklik kuralı çalışmamalı.
+
+    "muz" her adda bitişik geçer; kural oraya da uygulansaydı "Muz Aromalı Süt"
+    ana listeye dönerdi — ayırmak için uğraştığımız şeyin tam tersi.
+    """
+    assert not products._phrase_appears("Muz Aromalı Süt 200 Ml", "muz")
+    assert products._phrase_appears("Arko Men Tıraş Sonrası Kolonya", "tıraş sonrası")
+
+
 def test_seed_forms_when_every_name_exceeds_the_length_cap():
     """Çok kelimeli katalog terimlerinde tohum yine de oluşmalı.
 

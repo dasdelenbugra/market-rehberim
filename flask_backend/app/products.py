@@ -133,6 +133,42 @@ def _head_matches(name: str, query: str) -> bool:
     return _matches(content[-1], query_tokens[-1]) and not _is_flavour_list(name)
 
 
+def _phrase_appears(name: str, query: str) -> bool:
+    """Çok kelimeli sorgu, adın içinde **bitişik** olarak geçiyor mu?
+
+    Baş isim kuralı sorgunun ürünü adlandırdığını varsayar. Bazı katalog
+    terimleri ürün adı değil niteleyicidir: "Tıraş Sonrası Kolonya" adının baş
+    ismi *kolonya*, sorgu ise "tıraş sonrası". Baş isme bakan kural burada hiç
+    aday bulamıyor, tohum oluşmuyor ve ana liste boş kalıyordu.
+
+    Sorgunun tamamının bitişik geçmesi güçlü bir sinyal: ad, sorguyu bir bütün
+    olarak barındırıyorsa ürün odur.
+
+    Tek kelimelik sorgularda **bilerek çalışmaz**: "muz" her yerde bitişik
+    geçer, "Muz Aromalı Süt" de dahil — bu kural oraya uygulansa ayırdığımız
+    her şey yeniden birbirine karışırdı.
+    """
+    query_tokens = _tokens(query)
+    if len(query_tokens) < 2:
+        return False
+
+    content = _content_tokens(name)
+    span = len(query_tokens)
+    for start in range(len(content) - span + 1):
+        if all(_matches(content[start + i], query_tokens[i]) for i in range(span)):
+            return True
+    return False
+
+
+def _names_the_query(name: str, query: str) -> bool:
+    """Ad, sorgulanan ürünü adlandırıyor mu? İki yoldan biri yeter.
+
+    Ya sorgu adın baş ismidir ("Yerli **Muz**"), ya da çok kelimeli sorgu adın
+    içinde bir bütün olarak geçer ("Arko Men **Tıraş Sonrası** Kolonya").
+    """
+    return _head_matches(name, query) or _phrase_appears(name, query)
+
+
 def relevance(name: str, query: str) -> int | None:
     """Ürün adının sorguya alaka katmanı.
 
@@ -153,7 +189,7 @@ def relevance(name: str, query: str) -> int | None:
 
     # Baş isim adın son içerik kelimesidir. Sorgu birden çok kelimeyse
     # ("yerli muz") son kelimesi baş isimle kıyaslanır.
-    if _head_matches(name, query) and len(content) <= _MAX_HEAD_TOKENS:
+    if _names_the_query(name, query) and len(content) <= _MAX_HEAD_TOKENS:
         return RELEVANCE_HEAD
 
     if any(_matches(token, q) for token in content for q in query_tokens):
@@ -196,7 +232,7 @@ def target_category(items: list[Item], query: str) -> str:
     for item in items:
         if not item.category:
             continue
-        if not _head_matches(item.name, query):
+        if not _names_the_query(item.name, query):
             continue
         length = len(_content_tokens(item.name))
         if shortest is None or length < shortest:

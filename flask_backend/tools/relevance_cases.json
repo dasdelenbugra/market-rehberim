@@ -153,8 +153,8 @@
     },
     {
       "query": "after shave",
-      "notHead": [],
-      "any": ["tıraş sonrası"]
+      "head": ["tıraş sonrası kolonya", "tıraş sonrası losyon"],
+      "notHead": []
     }
   ]
 }
