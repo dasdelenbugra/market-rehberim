@@ -67,6 +67,41 @@
       "query": "peynir",
       "head": ["beyaz peynir", "krem peynir"],
       "notHead": []
+    },
+    {
+      "query": "deterjan",
+      "head": ["toz deterjan", "sıvı deterjan"],
+      "notHead": []
+    },
+    {
+      "query": "bulaşık deterjanı",
+      "head": ["fairy", "sıvı bulaşık deterjanı"],
+      "notHead": []
+    },
+    {
+      "query": "çamaşır suyu",
+      "head": ["domestos", "çamaşır suyu"],
+      "notHead": []
+    },
+    {
+      "query": "şampuan",
+      "head": ["elidor", "şampuan"],
+      "notHead": []
+    },
+    {
+      "query": "diş macunu",
+      "head": ["colgate diş macunu", "sensodyne", "çürüklere karşı"],
+      "notHead": []
+    },
+    {
+      "query": "tuvalet kağıdı",
+      "head": ["selpak", "tuvalet kağıdı"],
+      "notHead": []
+    },
+    {
+      "query": "peçete",
+      "head": ["peçete"],
+      "notHead": []
     }
   ]
 }

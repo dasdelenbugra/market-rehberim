@@ -249,6 +249,21 @@ def test_descriptor_head_is_not_treated_as_derived():
     assert not products._is_derived_product("Aybar Gezen Yumurta 10 Adet", "yumurta")
 
 
+def test_accidental_suffix_lookalike_is_not_derived():
+    """Sonu tesadüfen "-sı" okunan sıradan kelime türev sanılmamalı.
+
+    "Çürüklere Karşı" ifadesindeki "karşı" fold sonrası "karsi" oluyor ve ek
+    taşıyor gibi görünüyordu; gerçek diş macunu ilgili bölüme düşüyordu. Ayıran
+    kural: tamlamanın tabanı ("zeytin ezmesi"ndeki *zeytin*) sorgunun kendisi
+    olmalı, burada solundaki kelime "çürüklere".
+    """
+    assert not products._is_derived_product(
+        "Colgate Diş Macunu Çürüklere Karşı 150 Ml", "diş macunu"
+    )
+    # Gerçek tamlamada taban sorgunun kendisidir; kural orada hâlâ çalışmalı.
+    assert products._is_derived_product("Marmarabirlik Zeytin Ezmesi 340 Gr", "zeytin")
+
+
 # --- Gruplama ---------------------------------------------------------------
 
 def test_same_product_grouped_across_markets():

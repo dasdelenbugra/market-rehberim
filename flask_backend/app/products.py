@@ -215,21 +215,31 @@ def _is_derived_product(name: str, query: str) -> bool:
     Beyazlatıcısı" da "Kahve" kategorisinde. İkisi de aranan şey değil.
 
     Türkçe bunu ekle işaretliyor: zeytin → zeytin **ezmesi**, kahve → kahve
-    **beyazlatıcısı**. Baş isim tamlama eki taşıyor *ve* sorgunun kendisi
-    değilse, ürün türevdir.
+    **beyazlatıcısı**. Aranan üç koşul var, üçü birden gerekli:
 
-    Baş ismin sorguyu karşıladığı durum önce elenir; yoksa "Türk Kahvesi"
-    (kahve+si) de türev sayılırdı — oysa o gerçekten kahve.
+    1. Baş isim sorgunun kendisi olmamalı — yoksa "Türk Kahvesi" (kahve+si) de
+       türev sayılırdı, oysa o gerçekten kahve.
+    2. Baş isim tamlama eki taşımalı.
+    3. **Ekin hemen solundaki kelime sorgu olmalı.** Belirtisiz isim tamlaması
+       iki kelimelik bir birimdir: [taban][türev-si]. Bu koşul olmadan sonu
+       tesadüfen "-sı" okunan sıradan kelimeler de türev sanılıyordu — "Colgate
+       Diş Macunu Çürüklere Karşı" adının başı "karşı" ve fold sonrası "karsi"
+       oluyor, ek değil.
     """
     content = _content_tokens(name)
     query_tokens = _tokens(query)
-    if not content or not query_tokens:
+    # Tamlama en az iki kelime ister: tek kelimelik adda taban yok.
+    if len(content) < 2 or not query_tokens:
         return False
 
     head = content[-1]
     if _matches(head, query_tokens[-1]):
         return False
-    return len(head) >= _MIN_COMPOUND_LEN and head.endswith(_COMPOUND_SUFFIXES)
+    if len(head) < _MIN_COMPOUND_LEN or not head.endswith(_COMPOUND_SUFFIXES):
+        return False
+
+    base = content[-2]
+    return any(_matches(base, token) for token in query_tokens)
 
 
 def _tier(name: str, category: str, query: str, target: str) -> int:
