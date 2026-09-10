@@ -1,0 +1,72 @@
+{
+  "_comment": [
+    "Alaka sıralamasının canlı kaynağa karşı beklentileri.",
+    "Her girdi bir sorgu; adlar ürün adının içinde geçen parçalardır (küçük/büyük",
+    "harf ve Türkçe karakter duyarsız eşleşir), tam ad değil — kaynak ambalaj",
+    "bilgisini değiştirdiğinde test kırılmasın diye.",
+    "head: ana listede OLMALI. notHead: ana listede OLMAMALI (ilgili bölümünde).",
+    "Çalıştırmak için: python tools/check_relevance.py"
+  ],
+  "cases": [
+    {
+      "query": "muz",
+      "head": ["yerli muz", "ithal muz"],
+      "notHead": ["hero baby", "aromalı süt", "kremalı gofret", "popkek", "protein bar"]
+    },
+    {
+      "query": "domates",
+      "head": ["domates 1 kg"],
+      "notHead": ["salça", "püre", "rendelenmiş", "doğranmış"]
+    },
+    {
+      "query": "yumurta",
+      "head": ["organik yumurta", "yumurta m boy", "gezen"],
+      "notHead": []
+    },
+    {
+      "query": "süt",
+      "head": ["sek süt", "içim süt", "pınar süt"],
+      "notHead": []
+    },
+    {
+      "query": "su",
+      "head": ["erikli su", "kızılay su"],
+      "notHead": ["sucuk"]
+    },
+    {
+      "query": "ayçiçek yağı",
+      "head": ["tarım kredi anadolu ayçiçek yağı", "komili ayçiçek yağı"],
+      "notHead": []
+    },
+    {
+      "query": "ekmek",
+      "head": ["ekşi mayalı", "glutensiz ekmek"],
+      "notHead": []
+    },
+    {
+      "query": "zeytin",
+      "head": ["siyah zeytin", "yeşil zeytin"],
+      "notHead": ["zeytin ezmesi"]
+    },
+    {
+      "query": "kahve",
+      "head": ["filtre kahve", "çekirdek kahve"],
+      "notHead": ["beyazlatıcı"]
+    },
+    {
+      "query": "çay",
+      "head": ["siyah çay"],
+      "notHead": []
+    },
+    {
+      "query": "makarna",
+      "head": ["burgu makarna", "fiyonk makarna"],
+      "notHead": []
+    },
+    {
+      "query": "peynir",
+      "head": ["beyaz peynir", "krem peynir"],
+      "notHead": []
+    }
+  ]
+}
