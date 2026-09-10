@@ -24,10 +24,17 @@ data class SearchResult(
     val updatedAt: String? = null,
 )
 
-/** Gruplanmış arama sonucu + ulusal fiyatların son güncellenme zamanı. */
+/**
+ * Gruplanmış arama sonucu + ulusal fiyatların son güncellenme zamanı.
+ *
+ * @param suggestion `X-Search-Suggestion` başlığından gelen "bunu mu demek
+ *   istediniz" önerisi. Sunucu yalnız sonuç boşken ve yeterince emin olduğunda
+ *   gönderir; markette gerçekten bulunmayan bir ürün için bilerek `null` kalır.
+ */
 data class ProductResult(
     val groups: List<ProductGroup> = emptyList(),
     val updatedAt: String? = null,
+    val suggestion: String? = null,
 )
 
 /**
@@ -96,6 +103,7 @@ class ItemRepository @Inject constructor(
             ProductResult(
                 groups = response.body().orEmpty(),
                 updatedAt = response.headers()["X-Data-Updated"],
+                suggestion = response.headers()["X-Search-Suggestion"],
             )
         }
 

@@ -238,6 +238,31 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
 
         bindResultMeta()
         bindUpdated(hasResults)
+        bindSuggestion(hasResults)
+    }
+
+    /**
+     * "Bunu mu demek istediniz: çikolata" — boş sonuçta tek dokunuşla düzeltme.
+     *
+     * Sunucu öneriyi yalnız yeterince emin olduğunda gönderiyor; markette
+     * gerçekten bulunmayan bir ürün ("pırasa") için bilerek göndermiyor. Bu
+     * yüzden düğme çoğu boş sonuçta görünmez ve görünmemesi doğrudur — yanlış
+     * bir öneri, öneri vermemekten kötüdür.
+     */
+    private fun bindSuggestion(hasResults: Boolean) {
+        val suggestion = searchViewModel.suggestion
+        if (hasResults || suggestion.isNullOrBlank()) {
+            binding.btnSuggestion.visibility = GONE
+            return
+        }
+        binding.btnSuggestion.text = getString(R.string.search_did_you_mean, suggestion)
+        binding.btnSuggestion.setOnClickListener {
+            // Arama kutusu da güncellenir: kullanıcı ne arandığını görsün ve
+            // üstünde değişiklik yapabilsin.
+            binding.etSearch.setText(suggestion)
+            searchViewModel.fetchItems(suggestion)
+        }
+        binding.btnSuggestion.visibility = VISIBLE
     }
 
     /**
@@ -302,6 +327,8 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
             }
         )
         binding.ivEmptyIcon.setImageResource(R.drawable.ic_cloud_off)
+        // Ağ hatasında öneri anlamsız: sorgu kaynağa hiç ulaşmadı.
+        binding.btnSuggestion.visibility = GONE
         binding.btnRetry.visibility = VISIBLE
         binding.emptyView.visibility = VISIBLE
     }
@@ -311,6 +338,7 @@ class SearchFragment : Fragment(), android.widget.TextView.OnEditorActionListene
         binding.tvEmpty.setText(R.string.empty_results)
         binding.ivEmptyIcon.setImageResource(R.drawable.ic_search_outlined)
         binding.btnRetry.visibility = GONE
+        binding.btnSuggestion.visibility = GONE
     }
 
     override fun onDestroyView() {

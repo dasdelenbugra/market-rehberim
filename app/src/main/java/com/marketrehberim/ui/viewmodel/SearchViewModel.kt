@@ -52,6 +52,16 @@ class SearchViewModel @Inject constructor(
     var lastUpdatedIso: String? = null
         private set
 
+    /**
+     * "Bunu mu demek istediniz" önerisi — `X-Search-Suggestion` başlığından.
+     *
+     * Sunucu yalnız sonuç boşken ve yeterince emin olduğunda gönderir; markette
+     * gerçekten bulunmayan bir ürün için bilerek boş bırakır. Yani null olması
+     * "öneri bulunamadı" değil, çoğu zaman "önerilecek bir şey yok" demektir.
+     */
+    var suggestion: String? = null
+        private set
+
     fun fetchItems(name: String) {
         val query = name.trim()
         if (query.isEmpty()) return
@@ -64,6 +74,7 @@ class SearchViewModel @Inject constructor(
                 .onSuccess { result ->
                     rawGroups = result.groups
                     lastUpdatedIso = result.updatedAt
+                    suggestion = result.suggestion
                     selectedMarket = null
                     relatedExpanded = false
                     _markets.value = rawGroups
@@ -77,6 +88,7 @@ class SearchViewModel @Inject constructor(
                     rawGroups = emptyList()
                     _markets.value = emptyList()
                     lastUpdatedIso = null
+                    suggestion = null
                     _searchResults.value = UIItemState.Error(error.toSearchError())
                 }
         }

@@ -161,6 +161,19 @@
                 android:textAppearance="?attr/textAppearanceBodyLarge"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
+            <!-- "Bunu mu demek istediniz: çikolata" — dokunulunca o terimi arar.
+                 Sunucu yalnız yeterince emin olduğunda öneri gönderiyor, bu
+                 yüzden çoğu boş sonuçta bu düğme hiç görünmez. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSuggestion"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                tools:text="Bunu mu demek istediniz: çikolata"
+                tools:visibility="visible" />
+
             <!-- Yalnız hata durumunda görünür: "sonuç yok" tekrar denemekle çözülmez. -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRetry"

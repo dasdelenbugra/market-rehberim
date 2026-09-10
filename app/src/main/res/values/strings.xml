@@ -84,6 +84,7 @@
     <string name="search_status_loading">%s · marketler taranıyor…</string>
     <string name="search_meta">%1$s · %2$d sonuç · en ucuz %3$.2f ₺</string>
     <string name="search_updated">Son güncelleme: %s</string>
+    <string name="search_did_you_mean">Bunu mu demek istediniz: %s</string>
 
     <!-- Tasarruf takibi -->
     <string name="savings_title">Bu ay kazandığın</string>
