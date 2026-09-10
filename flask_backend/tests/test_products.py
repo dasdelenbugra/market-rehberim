@@ -201,6 +201,54 @@ def test_no_category_anywhere_keeps_old_behaviour():
     assert _tier_of(groups, "Muz Aromalı Süt 200 Ml") == products.RELEVANCE_RELATED
 
 
+@pytest.mark.parametrize(
+    "name,query",
+    [
+        ("Marmarabirlik Sade Zeytin Ezmesi 340 Gr", "zeytin"),
+        ("Carrefour Kahve Beyazlatıcısı 200 Gr", "kahve"),
+    ],
+)
+def test_derived_product_not_promoted_by_category(name, query):
+    """Kaynak kategorisi üründen kaba olabiliyor: ezme de "Zeytin" kategorisinde.
+
+    Tamlama eki ("zeytin ezme·si") bunun aranan şeyin kendisi değil ondan
+    türetilmiş bir ürün olduğunu söylüyor; kategori eşleşse de ana listeye
+    çıkmamalı.
+    """
+    groups = products.group(
+        [
+            item(f"Siyah {query.title()} 1 Kg", "149.00", category=query.title()),
+            item(name, "99.00", category=query.title()),
+        ],
+        query,
+    )
+
+    assert _tier_of(groups, name) == products.RELEVANCE_RELATED
+
+
+def test_compound_suffix_on_the_query_itself_is_not_derived():
+    """"Türk Kahvesi" de kahve+si ama türev değil — aranan şeyin kendisi.
+
+    Baş ismin sorguyu karşıladığı durum ek kontrolünden önce elenmezse gerçek
+    ürünler türev sanılıp düşerdi.
+    """
+    groups = products.group(
+        [
+            item("Bonheur Çekirdek Kahve 1 Kg", "949.90", category="Kahve"),
+            item("Kahve Dünyası Türk Kahvesi 250 Gr", "316.00", category="Kahve"),
+        ],
+        "kahve",
+    )
+
+    assert _tier_of(groups, "Kahve Dünyası Türk Kahvesi 250 Gr") == products.RELEVANCE_HEAD
+
+
+def test_descriptor_head_is_not_treated_as_derived():
+    """Sondaki niteleyici ("M Boy") tamlama eki taşımaz; terfi engellenmemeli."""
+    assert not products._is_derived_product("Yumurta M Boy 53-62 Gr 30 Adet", "yumurta")
+    assert not products._is_derived_product("Aybar Gezen Yumurta 10 Adet", "yumurta")
+
+
 # --- Gruplama ---------------------------------------------------------------
 
 def test_same_product_grouped_across_markets():

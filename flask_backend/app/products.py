@@ -197,6 +197,41 @@ def target_category(items: list[Item], query: str) -> str:
     return sorted(name for name, n in counts.items() if n == top)[0]
 
 
+#: Belirtisiz isim tamlamasının ünlüyle biten gövdelerde aldığı ek: "ezme+si",
+#: "beyazlatıcı+sı", "salça+sı" (fold sonrası "sı" → "si", "sü" → "su"). Ünsüzle
+#: biten gövdedeki -i/-ı/-u/-ü biçimi bilerek dışarıda: o ek sıradan kelimelerin
+#: sonunda da çok geçiyor ve gerçek ürünleri yanlışlıkla eleme riski taşıyor.
+_COMPOUND_SUFFIXES = ("si", "su")
+
+#: Kısa kelimelerde son iki harfin tesadüfen tutması olası; ek arayışını
+#: gövdesi olan kelimelerle sınırlıyoruz.
+_MIN_COMPOUND_LEN = 5
+
+
+def _is_derived_product(name: str, query: str) -> bool:
+    """Ürün, sorgudaki şeyin kendisi değil ondan türetilmiş bir şey mi?
+
+    Kaynağın kategorisi bazen üründen kaba: "Zeytin Ezmesi" de "Zeytin", "Kahve
+    Beyazlatıcısı" da "Kahve" kategorisinde. İkisi de aranan şey değil.
+
+    Türkçe bunu ekle işaretliyor: zeytin → zeytin **ezmesi**, kahve → kahve
+    **beyazlatıcısı**. Baş isim tamlama eki taşıyor *ve* sorgunun kendisi
+    değilse, ürün türevdir.
+
+    Baş ismin sorguyu karşıladığı durum önce elenir; yoksa "Türk Kahvesi"
+    (kahve+si) de türev sayılırdı — oysa o gerçekten kahve.
+    """
+    content = _content_tokens(name)
+    query_tokens = _tokens(query)
+    if not content or not query_tokens:
+        return False
+
+    head = content[-1]
+    if _matches(head, query_tokens[-1]):
+        return False
+    return len(head) >= _MIN_COMPOUND_LEN and head.endswith(_COMPOUND_SUFFIXES)
+
+
 def _tier(name: str, category: str, query: str, target: str) -> int:
     """Bir ürünün nihai alaka katmanı: ad sezgisi + kategori birlikte."""
     by_name = relevance(name, query)
@@ -208,7 +243,11 @@ def _tier(name: str, category: str, query: str, target: str) -> int:
     if not target or not category:
         return by_name
 
-    if fold(category) == fold(target) and mentions(name, query):
+    if (
+        fold(category) == fold(target)
+        and mentions(name, query)
+        and not _is_derived_product(name, query)
+    ):
         return RELEVANCE_HEAD
     return RELEVANCE_RELATED
 
