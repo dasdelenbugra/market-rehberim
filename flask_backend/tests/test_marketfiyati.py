@@ -93,6 +93,43 @@ def test_canonical_market_names():
     assert _canonical_market("Yerel Market X") == "Yerel Market X"
 
 
+def test_parse_reads_source_category():
+    """Alaka sıralaması buna dayanıyor; kaynak alan adını değiştirirse burada patlar."""
+    payload = {
+        "content": [
+            {
+                "title": "Yerli Muz 1 Kg",
+                "main_category": "Meyve",
+                "productDepotInfoList": [{"marketAdi": "Migros", "price": 79.0}],
+            },
+            {
+                "title": "Hero Baby Şeftali Muz 120 Gr",
+                # Alternatif alan adı da okunabilmeli.
+                "mainCategory": "Bebek Mamaları",
+                "productDepotInfoList": [{"marketAdi": "A101", "price": 65.9}],
+            },
+        ]
+    }
+    by_name = {it.name: it.category for it in MarketFiyatiSource()._parse(payload)}
+
+    assert by_name["Yerli Muz 1 Kg"] == "Meyve"
+    assert by_name["Hero Baby Şeftali Muz 120 Gr"] == "Bebek Mamaları"
+
+
+def test_category_does_not_leak_into_client_payload():
+    """`category` sunucu içi bir sinyal; istemci sözleşmesi genişlemesin.
+
+    Android `Item` şemasını sabit kabul ediyor. Tüketicisi olmayan alan
+    eklemek sözleşmeyi sessizce büyütür.
+    """
+    from app.models import Item
+
+    payload = Item("Yerli Muz 1 Kg", "79.00", "", "Migros", "Meyve").to_dict()
+
+    assert "category" not in payload
+    assert payload["from"] == "Migros"
+
+
 def test_latest_index_time_picks_newest_as_iso():
     # SAMPLE'daki en yeni damga 2026-07-25T03:12:00; ISO metin olarak dönmeli.
     assert MarketFiyatiSource()._latest_index_time(SAMPLE) == "2026-07-25T03:12:00"

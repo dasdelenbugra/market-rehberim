@@ -9,8 +9,8 @@ from app import products
 from app.models import Item
 
 
-def item(name, price, source="Migros"):
-    return Item(name, price, "", source)
+def item(name, price, source="Migros", category=""):
+    return Item(name, price, "", source, category)
 
 
 # --- Alaka ------------------------------------------------------------------
@@ -69,13 +69,12 @@ def test_long_but_genuine_name_still_head_match():
         products.RELEVANCE_HEAD
 
 
-def test_known_limit_elided_head_noun():
-    """Baş ismi düşmüş kısa adlarda kural hâlâ yanılabilir — kabul edilen sınır.
+def test_elided_head_noun_still_fools_the_name_rule():
+    """Ad tek başına yetmiyor: "Hero Baby Şeftali Muz" bebek maması ama sonu "Muz".
 
-    "Hero Baby Şeftali Muz 120 Gr" bir bebek püresi ama adı kısa ve sonu "Muz".
-    Addan başka sinyal olmadan (kategori, barkod) ayırmanın yolu yok; muz
-    aramasında ana listeye düşen tek alakasız ürün budur. Katlanılabilir:
-    yanlış birleştirme değil, yalnızca yanlış sıralama.
+    Bu, ad sezgisinin bilinen sınırı ve öyle kalıyor — çözüm ada daha çok kural
+    eklemek değil, kaynağın kategorisini kullanmak. Grup düzeyinde nasıl
+    düzeldiği: `test_category_demotes_name_rule_false_positive`.
     """
     assert products.relevance("Hero Baby Şeftali Muz 120 Gr", "muz") == \
         products.RELEVANCE_HEAD
@@ -95,6 +94,111 @@ def test_long_suffix_not_matched():
 def test_quantity_ignored_when_finding_head():
     """"1 Kg" atılmazsa adın başı "kg" sanılırdı."""
     assert products._content_tokens("Yerli Muz 1 Kg") == ["yerli", "muz"]
+
+
+# --- Kategori tohumlama -----------------------------------------------------
+
+def _tier_of(groups, name):
+    return next(g["relevance"] for g in groups if g["name"] == name)
+
+
+def test_category_demotes_name_rule_false_positive():
+    """Bebek maması ana listeden düşmeli: adı muzla bitiyor ama kategorisi Meyve değil.
+
+    Ad kuralı ikisini de baş isim sayıyor (bkz.
+    `test_elided_head_noun_still_fools_the_name_rule`); ayıran şey kategori.
+    """
+    groups = products.group(
+        [
+            item("Yerli Muz 1 Kg", "79.00", category="Meyve"),
+            item("Hero Baby Şeftali Muz 120 Gr", "65.90", category="Bebek Mamaları"),
+        ],
+        "muz",
+    )
+
+    assert _tier_of(groups, "Yerli Muz 1 Kg") == products.RELEVANCE_HEAD
+    assert _tier_of(groups, "Hero Baby Şeftali Muz 120 Gr") == products.RELEVANCE_RELATED
+    # Ucuz olması onu üste taşımamalı: alaka fiyattan önce gelir.
+    assert groups[0]["name"] == "Yerli Muz 1 Kg"
+
+
+def test_category_promotes_what_the_name_rule_missed():
+    """Baş ismi sonda olmayan gerçek ürünler kategori sayesinde geri gelir.
+
+    "Yumurta M Boy 30 Adet" adının sonu "Boy"; ad kuralı bunu ilgili sayıyor.
+    Kategorisi diğer yumurtalarla aynı olduğu için ana listeye çıkmalı.
+    """
+    groups = products.group(
+        [
+            item("Organik Yumurta 6 Adet", "65.00", category="Yumurta"),
+            item("Yumurta M Boy 53-62 Gr 30 Adet", "145.00", category="Yumurta"),
+        ],
+        "yumurta",
+    )
+
+    assert products.relevance("Yumurta M Boy 53-62 Gr 30 Adet", "yumurta") == \
+        products.RELEVANCE_RELATED  # ad kuralı tek başına kaçırıyor
+    assert _tier_of(groups, "Yumurta M Boy 53-62 Gr 30 Adet") == products.RELEVANCE_HEAD
+
+
+def test_shortest_name_seeds_the_target_category():
+    """Hedef kategoriyi en kısa adlı aday belirler, en kalabalık olan değil.
+
+    "muz" sonuçlarında Bebek Mamaları sayıca üstün; çoğunluğa baksaydık hedef
+    yanlış çıkardı.
+    """
+    items = [
+        item("Hero Baby Elma Muz 125 Gr", "51.95", category="Bebek Mamaları"),
+        item("Hero Baby Şeftali Muz 120 Gr", "65.90", category="Bebek Mamaları"),
+        item("Hero Baby Kayısı Muz 120 Gr", "66.90", category="Bebek Mamaları"),
+        item("Yerli Muz 1 Kg", "79.00", category="Meyve"),
+    ]
+
+    assert products.target_category(items, "muz") == "Meyve"
+
+
+def test_category_without_query_mention_is_not_promoted():
+    """Hedef kategoride olmak yetmez; ad sorguyu da geçirmeli.
+
+    Kaynak "muz" sorgusuna Meyve kategorisinden alakasız bir ürün döndürürse
+    ana listeye sızmamalı.
+    """
+    groups = products.group(
+        [
+            item("Yerli Muz 1 Kg", "79.00", category="Meyve"),
+            item("Elma 1 Kg", "45.00", category="Meyve"),
+        ],
+        "muz",
+    )
+
+    assert _tier_of(groups, "Elma 1 Kg") == products.RELEVANCE_RELATED
+
+
+def test_missing_category_falls_back_to_name_rule():
+    """Kategorisiz kayıt cezalandırılmamalı — crowdsourced yerel market verisi böyle.
+
+    Yerel marketin fiyatı kategori bildirmiyor; hedefe uymadı diye elenseydi
+    uygulamanın ayırt edici özelliği ana listeden tamamen kaybolurdu.
+    """
+    groups = products.group(
+        [
+            item("Yerli Muz 1 Kg", "79.00", category="Meyve"),
+            item("Muz 1 Kg", "72.00", source="Erenler"),  # kategorisiz
+        ],
+        "muz",
+    )
+
+    assert _tier_of(groups, "Muz 1 Kg") == products.RELEVANCE_HEAD
+
+
+def test_no_category_anywhere_keeps_old_behaviour():
+    """Kaynak kategori vermezse sistem eski (yalnız ada bakan) davranışına döner."""
+    items = [item("Yerli Muz 1 Kg", "79.00"), item("Muz Aromalı Süt 200 Ml", "13.90")]
+
+    assert products.target_category(items, "muz") == ""
+    groups = products.group(items, "muz")
+    assert _tier_of(groups, "Yerli Muz 1 Kg") == products.RELEVANCE_HEAD
+    assert _tier_of(groups, "Muz Aromalı Süt 200 Ml") == products.RELEVANCE_RELATED
 
 
 # --- Gruplama ---------------------------------------------------------------

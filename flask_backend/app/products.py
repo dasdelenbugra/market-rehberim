@@ -11,17 +11,33 @@ ima ediyordu.
 
 1. **Gruplama** — aynı ürün adı tek satırda toplanır, marketler onun altında
    karşılaştırılır. Uygulamanın asıl vaadi bu ("aynı ürün, hangi market ucuz").
-2. **Alaka sıralaması** — Türkçe ad tamlamalarında **baş isim sonda** durur:
-   "Yerli Muz" muzdur, "Muz Aromalı Süt" süttür. Sorgu kelimesi adın baş ismiyse
-   ürün aramanın asıl hedefidir; ortada geçiyorsa yalnızca ilgilidir. İstemci bu
-   ayrımı kullanıp ilgili ürünleri ayrı bir bölüme koyar.
+2. **Alaka sıralaması** — iki sinyal birlikte kullanılır, çünkü ikisi de tek
+   başına yetmiyor:
+
+   *Ad sezgisi:* Türkçe ad tamlamalarında **baş isim sonda** durur — "Yerli Muz"
+   muzdur, "Muz Aromalı Süt" süttür. Ama ad her şeyi söylemiyor: "Hero Baby Elma
+   Muz" da sonu "muz" olan kısa bir ad, oysa bebek maması.
+
+   *Kaynak kategorisi:* API her ürüne `main_category` veriyor (Meyve, Bebek
+   Mamaları, Yumurta). Bu da tek başına yetmiyor — "muz" sonuçlarında en
+   kalabalık kategoriler Süt ve Bebek Mamaları; Meyve yalnız iki üründe. En
+   çok geçen kategoriyi seçmek yanlış cevap verir.
+
+   *Birleşimi:* ad sezgisi **tohum** olur, kategori **genelleştirir**. Baş ismi
+   sorgu olan adaylardan en kısa adlısı hedef kategoriyi belirler ("Yerli Muz"
+   → Meyve); ana liste o kategorideki ürünlerden oluşur. Böylece hem bebek
+   maması elenir, hem de ad sezgisinin kaçırdığı ürünler ("Yumurta M Boy 30
+   Adet", "Danone Doğal Süt 6x180 Ml") geri kazanılır.
+
+   İstemci bu ayrımı kullanıp ilgili ürünleri ayrı bir bölüme koyar.
 """
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from app.models import Item
-from app.text import _TR_FOLD
+from app.text import _TR_FOLD, fold
 
 # Alaka katmanları. Sayı küçüldükçe alaka artar; istemci 0'ı ana liste,
 # 1'i "ilgili ürünler" bölümü olarak gösterir.
@@ -135,6 +151,68 @@ def relevance(name: str, query: str) -> int | None:
     return RELEVANCE_RELATED
 
 
+def mentions(name: str, query: str) -> bool:
+    """Ad, sorguyu herhangi bir yerinde geçiriyor mu (baş isim olması şart değil).
+
+    Kategori üzerinden terfi ettirirken güvenlik kemeri: hedef kategorideki ama
+    sorguyla ilgisiz bir ürün ("muz" ararken Meyve kategorisindeki "Elma 1 Kg")
+    ana listeye sızmasın.
+    """
+    query_tokens = _tokens(query)
+    content = _content_tokens(name)
+    if not query_tokens or not content:
+        return False
+    return any(_matches(token, q) for token in content for q in query_tokens)
+
+
+def target_category(items: list[Item], query: str) -> str:
+    """Sorgunun hedef kategorisi; belirlenemezse boş metin.
+
+    Aday, baş ismi sorgu olan (RELEVANCE_HEAD) ve kategorisi bilinen üründür.
+    Adaylar arasından **en kısa adlı** olan seçilir: bir ürünün en saf ifadesi
+    en az niteleyici alanıdır. "Yerli Muz" (2 kelime) ile "Hero Baby Elma Muz"
+    (4 kelime) yarışırsa ilki kazanır ve hedef Meyve olur.
+
+    Aynı uzunlukta birden çok kategori kalırsa en çok tekrar eden seçilir; o da
+    eşitse ada göre sabitlenir — aynı girdi hep aynı sonucu vermeli.
+    """
+    shortest: int | None = None
+    candidates: list[str] = []
+
+    for item in items:
+        if not item.category:
+            continue
+        if relevance(item.name, query) != RELEVANCE_HEAD:
+            continue
+        length = len(_content_tokens(item.name))
+        if shortest is None or length < shortest:
+            shortest, candidates = length, [item.category]
+        elif length == shortest:
+            candidates.append(item.category)
+
+    if not candidates:
+        return ""
+    counts = Counter(candidates)
+    top = max(counts.values())
+    return sorted(name for name, n in counts.items() if n == top)[0]
+
+
+def _tier(name: str, category: str, query: str, target: str) -> int:
+    """Bir ürünün nihai alaka katmanı: ad sezgisi + kategori birlikte."""
+    by_name = relevance(name, query)
+    by_name = RELEVANCE_RELATED if by_name is None else by_name
+
+    # Kategori yoksa ada güvenilir. Crowdsourced kayıtların kategorisi hiç
+    # olmuyor; "hedefe uymadı" diye eleseydik yerel marketleri ana listeden
+    # tamamen silerdik — uygulamanın ayırt edici özelliğini.
+    if not target or not category:
+        return by_name
+
+    if fold(category) == fold(target) and mentions(name, query):
+        return RELEVANCE_HEAD
+    return RELEVANCE_RELATED
+
+
 def group(items: list[Item], query: str) -> list[dict]:
     """Aynı ürünü tek gruba toplar, alaka ve fiyata göre sıralar.
 
@@ -150,6 +228,10 @@ def group(items: list[Item], query: str) -> list[dict]:
             continue
         buckets.setdefault(key, []).append(item)
 
+    # Hedef kategori tüm sonuç kümesine bakılarak bir kez belirlenir; grup grup
+    # hesaplanamaz, çünkü tohum başka bir grubun içindedir.
+    target = target_category(items, query)
+
     groups = []
     for members in buckets.values():
         members.sort(key=lambda it: it.price_value)
@@ -160,10 +242,13 @@ def group(items: list[Item], query: str) -> list[dict]:
         image = next((m.image for m in members if m.image), "")
 
         payload = best.to_dict()
+        # Grubun kategorisi: üyelerden ilk dolu olan. Aynı ürün farklı
+        # marketlerde aynı kategoriyle geliyor; bazı satırlarda alan boş kalıyor.
+        category = next((m.category for m in members if m.category), "")
         # `or` KULLANMA: RELEVANCE_HEAD == 0 ve falsy'dir; `x or RELATED` en
         # alakalı ürünleri sessizce "ilgili"ye düşürüyordu — tam da düzeltmeye
         # çalıştığımız hatanın aynısı.
-        tier = relevance(best.name, query)
+        tier = _tier(best.name, category, query, target)
         groups.append(
             {
                 "name": best.name,
@@ -174,7 +259,7 @@ def group(items: list[Item], query: str) -> list[dict]:
                 "bestMarket": best.source,
                 "maxPrice": members[-1].price,
                 "marketCount": len(members),
-                "relevance": RELEVANCE_RELATED if tier is None else tier,
+                "relevance": tier,
                 "offers": [m.to_dict() for m in members],
             }
         )

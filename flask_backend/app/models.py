@@ -22,6 +22,11 @@ class Item:
     # `from` Python'da ayrılmış bir kelime olduğu için alan adı `source`,
     # JSON'a çevirirken `from` anahtarına eşlenir.
     source: str
+    #: Kaynağın ürün kategorisi ("Meyve", "Bebek Mamaları", "Yumurta").
+    #: Alaka katmanını belirlerken kullanılır (bkz. `app.products`). Kaynağın
+    #: bildirmediği kayıtlarda (crowdsourced, yerel market) boş kalır — bu
+    #: durumda alaka yalnız ada bakar.
+    category: str = ""
 
     def to_dict(self) -> dict:
         """JSON gövdesi.
@@ -30,9 +35,14 @@ class Item:
         `Item` üreten her yer (dört kaynak + crowdsourced okuma) ayrı ayrı
         doldurmak zorunda kalmasın. Miktar çıkarılamayan üründe `None` kalırlar
         ve istemci satırı göstermez — bkz. `app.units`.
+
+        `category` bilerek dışarı verilmez: sınıflandırma sunucuda bitiyor,
+        istemcinin tüketicisi yok. Sözleşmeyi tüketicisi olmayan alanla
+        genişletmiyoruz.
         """
         data = asdict(self)
         data["from"] = data.pop("source")
+        data.pop("category", None)
 
         derived = units.unit_price(self.price_value, self.name)
         data["unitPrice"], data["unit"] = derived if derived else (None, None)

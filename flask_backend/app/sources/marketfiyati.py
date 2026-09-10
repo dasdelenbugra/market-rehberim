@@ -191,6 +191,12 @@ class MarketFiyatiSource:
             if not title:
                 continue
             image = str(_first(product, "imageUrl", "image", "imageURL", default="") or "")
+            # Kaynağın kendi taksonomisi. Alaka sıralaması bunu kullanıyor:
+            # "Yerli Muz" (Meyve) ile "Hero Baby Elma Muz" (Bebek Mamaları)
+            # adlarından ayırt edilemiyor ama kategorileri net ayırıyor.
+            category = str(
+                _first(product, "main_category", "mainCategory", "category", default="") or ""
+            ).strip()
 
             for depot in self._depots(product):
                 market = _canonical_market(
@@ -206,7 +212,13 @@ class MarketFiyatiSource:
                 key = (market, title.lower())
                 current = best.get(key)
                 if current is None or float(price) < float(current.price):
-                    best[key] = Item(name=title, price=price, image=image, source=market)
+                    best[key] = Item(
+                        name=title,
+                        price=price,
+                        image=image,
+                        source=market,
+                        category=category,
+                    )
 
         items = list(best.values())
         items.sort(key=lambda it: float(it.price))
