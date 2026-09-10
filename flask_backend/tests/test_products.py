@@ -157,6 +157,30 @@ def test_shortest_name_seeds_the_target_category():
     assert products.target_category(items, "muz") == "Meyve"
 
 
+def test_seed_forms_when_every_name_exceeds_the_length_cap():
+    """Çok kelimeli katalog terimlerinde tohum yine de oluşmalı.
+
+    "Çöp Torbası" gibi iki kelimelik bir ürün adında her kayıt marka ve
+    niteleyicilerle birlikte dört kelimeyi aşıyor. Tohum seçimi `relevance`'a
+    (dolayısıyla uzunluk sınırına) bağlı kaldığı sürece hiç aday bulunamıyor,
+    kategori mekanizması çalışmıyor ve tüm sonuçlar "ilgili"ye düşüyordu.
+    """
+    items = [
+        item("Koroplast Küçük Boy Çöp Torbası 30 Adet", "45.00",
+             category="Mutfak Sarf Malzemeleri"),
+        item("Gomi Pristino Küçük Boy Çöp Torbası 40x50 Cm 40 Adet", "89.00",
+             category="Mutfak Sarf Malzemeleri"),
+    ]
+
+    # Ad kuralı tek başına ikisini de uzunluktan eliyor.
+    assert all(products.relevance(i.name, "çöp torbası") == products.RELEVANCE_RELATED
+               for i in items)
+
+    assert products.target_category(items, "çöp torbası") == "Mutfak Sarf Malzemeleri"
+    groups = products.group(items, "çöp torbası")
+    assert all(g["relevance"] == products.RELEVANCE_HEAD for g in groups)
+
+
 def test_category_without_query_mention_is_not_promoted():
     """Hedef kategoride olmak yetmez; ad sorguyu da geçirmeli.
 

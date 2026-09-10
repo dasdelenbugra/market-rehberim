@@ -36,6 +36,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 
+from app import synonyms
 from app.models import Item
 from app.text import _TR_FOLD, fold
 
@@ -115,6 +116,23 @@ def _matches(token: str, query_token: str) -> bool:
     return token.startswith(query_token) and 0 < extra <= min(3, len(query_token) - 1)
 
 
+def _head_matches(name: str, query: str) -> bool:
+    """Adın baş ismi sorguyu karşılıyor mu — uzunluk sınırına bakmadan.
+
+    `relevance` buna bir de `_MAX_HEAD_TOKENS` sınırı ekliyor; tohum seçimi ise
+    eklemiyor. Sebep: tohum zaten adayların **en kısasını** seçiyor, uzunluk
+    ikinci kez elemeye gerek yok. Sınır orada da uygulansaydı "Çöp Torbası" gibi
+    çok kelimeli katalog terimlerinde hiçbir aday kalmazdı — her ad marka ve
+    niteleyicilerle birlikte dört kelimeyi aşıyor — ve kategori mekanizması hiç
+    çalışmadan tüm sonuçlar "ilgili"ye düşerdi.
+    """
+    query_tokens = _tokens(query)
+    content = _content_tokens(name)
+    if not query_tokens or not content:
+        return False
+    return _matches(content[-1], query_tokens[-1]) and not _is_flavour_list(name)
+
+
 def relevance(name: str, query: str) -> int | None:
     """Ürün adının sorguya alaka katmanı.
 
@@ -135,11 +153,7 @@ def relevance(name: str, query: str) -> int | None:
 
     # Baş isim adın son içerik kelimesidir. Sorgu birden çok kelimeyse
     # ("yerli muz") son kelimesi baş isimle kıyaslanır.
-    if (
-        _matches(content[-1], query_tokens[-1])
-        and len(content) <= _MAX_HEAD_TOKENS
-        and not _is_flavour_list(name)
-    ):
+    if _head_matches(name, query) and len(content) <= _MAX_HEAD_TOKENS:
         return RELEVANCE_HEAD
 
     if any(_matches(token, q) for token in content for q in query_tokens):
@@ -182,7 +196,7 @@ def target_category(items: list[Item], query: str) -> str:
     for item in items:
         if not item.category:
             continue
-        if relevance(item.name, query) != RELEVANCE_HEAD:
+        if not _head_matches(item.name, query):
             continue
         length = len(_content_tokens(item.name))
         if shortest is None or length < shortest:
@@ -270,6 +284,12 @@ def group(items: list[Item], query: str) -> list[dict]:
     markette). Bulanık eşleştirme denenmedi — yanlış birleştirilen iki ürün,
     ayrı kalan iki ürüne göre çok daha yanıltıcı olur.
     """
+    # Sonuçlar kataloğun terimiyle geliyor ("Çöp Torbası"), kullanıcının
+    # yazdığıyla değil ("çöp poşeti"). Alaka eşleşmesi ürün adlarına baktığı
+    # için sorgu burada da çevrilmeli, yoksa hiçbir ad baş ismi karşılamaz ve
+    # her şey "ilgili" olurdu. Çeviri idempotent — iki kez uygulanması zararsız.
+    query = synonyms.canonical(query)
+
     buckets: dict[str, list[Item]] = {}
     for item in items:
         key = " ".join(_tokens(item.name))
