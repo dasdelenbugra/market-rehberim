@@ -1,6 +1,7 @@
 # 🛒 Market Rehberim
 
 [![testler](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/tests.yml/badge.svg)](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/tests.yml)
+[![android](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/android.yml/badge.svg)](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/android.yml)
 [![alaka ölçümü](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/relevance.yml/badge.svg)](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/relevance.yml)
 
 **Market Rehberim**, yerel odaklı bir **market fiyat karşılaştırma ve alışveriş
@@ -118,7 +119,7 @@ Splash Screen API
 ## 🧪 Testler
 ```powershell
 cd flask_backend && pytest -q      # Backend (139 test)
-./gradlew testDebugUnitTest        # Android birim (26 test)
+./gradlew testDebugUnitTest        # Android birim (39 test)
 ```
 
 ### Canlı ölçüm
@@ -138,7 +139,8 @@ python tools/check_marketfiyati.py süt --city istanbul   # kaynak şeması
 
 | Workflow | Ne zaman | Neden |
 |----------|----------|-------|
-| [`tests.yml`](.github/workflows/tests.yml) | Her push / PR | Hızlı, ağ istemez; Python 3.9 + 3.12 |
+| [`tests.yml`](.github/workflows/tests.yml) | Her push / PR | Backend; hızlı, ağ istemez (Python 3.9 + 3.12) |
+| [`android.yml`](.github/workflows/android.yml) | Android dosyaları değişince | Gradle dakikalar sürüyor; backend değişiminde çalışmasın |
 | [`relevance.yml`](.github/workflows/relevance.yml) | Haftalık + elle | *"Kaynak değişti mi?"* sorusunu izler |
 
 Alaka ölçümü bilerek her push'ta çalışmıyor: canlı kaynağa istek atıyor, kod

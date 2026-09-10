@@ -1,0 +1,69 @@
+# Android birim testleri.
+#
+# Backend testlerinden (tests.yml) ayrı duruyor çünkü maliyeti bambaşka:
+# pytest bir saniyede biterken Gradle derlemesi dakikalarca sürüyor. Bu yüzden
+# yalnız Android tarafına dokunulduğunda çalışır — backend'de tek satır
+# değiştirdiğinde beş dakika beklemenin karşılığı yok.
+#
+# Kapsam bilerek `testDebugUnitTest`: bunlar Android bağımlılığı olmayan saf
+# mantığı hedefliyor (ResultShaper, PriceParser, LabelTranslator, BasketStore,
+# Item) ve emülatör istemiyor. Cihaz gerektiren enstrümantasyon testleri
+# emülatör başlatmayı gerektirir; ayrı bir mesele.
+name: android
+
+# Yol listesi iki kez yazılıyor: GitHub Actions YAML anchor/alias desteklemiyor,
+# `&ad` / `*ad` yazarsan sessizce çalışmaz. Değiştirirken ikisini birden güncelle.
+on:
+  push:
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      # Workflow'un kendisi de tetiklemeli, yoksa buradaki bir düzeltme
+      # çalıştırılmadan depoda öylece durur.
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/android.yml"
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Bytecode hedefi 11 (app/build.gradle.kts) ama Gradle'ın kendisi
+      # compileSdk 35 ile 17 istiyor. İkisi ayrı şeyler: biri üretilen kodun
+      # sürümü, öteki derleyiciyi çalıştıran JVM.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Gradle'ı ve bağımlılık önbelleğini kurar; ikinci çalıştırmadan itibaren
+      # derleme belirgin biçimde kısalır.
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Birim testler
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      # Kırıldığında hangi testin neden düştüğünü loglardan okumak zor; HTML
+      # raporu indirilebilir olsun.
+      - name: Test raporunu yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+          retention-days: 7
