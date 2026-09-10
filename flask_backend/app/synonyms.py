@@ -8,9 +8,15 @@ dönüyordu — katalogda yalnız "çöp torbası" var. Kullanıcı boş ekran g
 Bu bir sıralama sorunu değil, kelime dağarcığı sorunu: alaka mantığı ne kadar
 iyi olursa olsun elinde sıralayacak sonuç yok.
 
-Eşleşmeler tahminle değil ölçümle seçildi — 157 yaygın terim canlı kaynağa
-sorulup sıfır/zayıf dönenler tespit edildi, sonra her biri için katalogun
-kullandığı karşılık doğrulandı. Sayılar aşağıdaki yorumlarda.
+Eşleşmeler tahminle değil ölçümle seçildi — iki turda 325 yaygın terim (gıda;
+sonra kozmetik, kişisel bakım, bebek, ev temizlik) canlı kaynağa sorulup
+sıfır/zayıf dönenler tespit edildi, sonra her biri için katalogun kullandığı
+karşılık doğrulandı. Sayılar aşağıdaki yorumlarda.
+
+Ölçerken dikkat: `numberOfFound` iyi eşleşmenin kanıtı değil, kaynak bulanık
+arama yapıyor. "mandal" 47 sonuç döndürüyor ama ürünler "**Manda** Sütlü
+Yoğurt"; "güve" ketçaba, "bardak" çay poşetine düşüyor. Yeni bir eşleşme
+eklerken sayıya değil dönen ürün adlarına bakın.
 
 Kapsam dışı bilinen sınır: eşleşme **tüm sorguya** bakar, parçasına değil.
 "büyük çöp poşeti" yazan kullanıcı hâlâ boş sonuç alır. Parça değiştirme
@@ -18,9 +24,17 @@ denenmedi çünkü kısa terimler ("jilet") başka kelimelerin içinde geçip
 sorguyu sessizce bozabilir; ölçülmemiş bir kural eklemektense dar kalmak
 yeğ. Ölçüm: `tools/check_relevance.py`.
 
-Karşılığı olmadığı ölçülen ve bilerek eklenmeyen terim: "pırasa" — katalogda
-gerçekten yok, eş anlamlı sorunu değil. Uydurma bir eşleşme kullanıcıyı
-alakasız ürüne götürürdü.
+Bilerek eklenmeyenler — sıfır sonuç veriyorlar ama eş anlamlı sorunu değiller,
+market o ürünü gerçekten taşımıyor: pırasa, naftalin, fondöten, göz kremi,
+toka, saç lastiği, paspas, süpürge, çöp kovası, elbise askısı, çamaşır
+mandalı, ampul, plastik bardak, mama sandalyesi, ütü kolası. İkinci turdaki 23
+sıfırın yalnız 6'sı gerçek eş anlamlı boşluğu çıktı; gerisi katalog kapsamı.
+Uydurma bir eşleşme kullanıcıyı istemediği ürüne götürür — boş sonuç, yanlış
+sonuçtan iyidir.
+
+"sinek ilacı" da eklenmedi: en yakın aday "böcek ilacı" ama dönen ürün bir
+vücut losyonu, aranan şey değil. Aynı reyondan olması aynı ürün olduğu
+anlamına gelmiyor.
 """
 from __future__ import annotations
 
@@ -42,6 +56,13 @@ _SYNONYMS_RAW = {
     "bulaşık makinesi deterjanı": "bulaşık makinesi tableti",  # 1 -> 52
     "wc kağıdı": "tuvalet kağıdı",                       # katalog terimi
     "çöp poşedi": "çöp torbası",                         # sık yazım hatası
+    # Kozmetik / kişisel bakım / ev bakım taraması (168 terim)
+    "rimel": "maskara",                                  # 0 -> 4
+    "tıkanıklık açıcı": "lavabo açıcı",                  # 0 -> 15
+    "gider açıcı": "lavabo açıcı",                       # 1 -> 15
+    "klozet temizleyici": "tuvalet temizleyici",         # 0 -> 7
+    "after shave": "tıraş sonrası",                      # 1 -> 5
+    "tıraş losyonu": "tıraş sonrası",                    # 1 -> 5
 }
 
 #: Arama anahtarı `fold`'lanmış hâlidir: büyük/küçük harf, Türkçe karakter ve

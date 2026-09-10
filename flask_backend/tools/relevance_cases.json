@@ -5,6 +5,9 @@
     "harf ve Türkçe karakter duyarsız eşleşir), tam ad değil — kaynak ambalaj",
     "bilgisini değiştirdiğinde test kırılmasın diye.",
     "head: ana listede OLMALI. notHead: ana listede OLMAMALI (ilgili bölümünde).",
+    "any: sonuçlarda görünmesi yeter — katalog terimi bir ürün adı değil de",
+    "niteleyici ifadeyse ('tıraş sonrası kolonya'nın başı 'kolonya') baş isim",
+    "modeli ana liste üretemez; orada doğru ölçüt bulunabilmektir.",
     "Çalıştırmak için: python tools/check_relevance.py"
   ],
   "cases": [
@@ -132,6 +135,26 @@
       "query": "kesme şeker",
       "head": ["küp şeker"],
       "notHead": []
+    },
+    {
+      "query": "rimel",
+      "head": ["maskara"],
+      "notHead": []
+    },
+    {
+      "query": "tıkanıklık açıcı",
+      "head": ["lavabo açıcı"],
+      "notHead": []
+    },
+    {
+      "query": "klozet temizleyici",
+      "head": ["tuvalet temizleyici"],
+      "notHead": []
+    },
+    {
+      "query": "after shave",
+      "notHead": [],
+      "any": ["tıraş sonrası"]
     }
   ]
 }

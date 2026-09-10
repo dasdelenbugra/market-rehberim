@@ -17,10 +17,28 @@ from app.models import Item
         ("ağartıcı", "çamaşır suyu"),
         ("hıyar", "salatalık"),
         ("meşrubat", "gazlı içecek"),
+        ("rimel", "maskara"),
+        ("tıkanıklık açıcı", "lavabo açıcı"),
+        ("klozet temizleyici", "tuvalet temizleyici"),
+        ("after shave", "tıraş sonrası"),
     ],
 )
 def test_known_terms_are_translated(user_term, catalogue_term):
     assert synonyms.canonical(user_term) == catalogue_term
+
+
+@pytest.mark.parametrize(
+    "absent_term",
+    ["pırasa", "naftalin", "fondöten", "süpürge", "ampul", "çöp kovası", "sinek ilacı"],
+)
+def test_genuinely_absent_products_are_left_alone(absent_term):
+    """Sıfır sonuç her zaman eş anlamlı sorunu değil.
+
+    Bu terimlerin hepsi ölçümde boş dönüyor ama market ürünü gerçekten
+    taşımıyor; en yakın kelimeye yönlendirmek kullanıcıyı istemediği ürüne
+    götürürdü. Boş sonuç, yanlış sonuçtan iyidir.
+    """
+    assert synonyms.canonical(absent_term) == absent_term
 
 
 def test_unknown_term_passes_through():

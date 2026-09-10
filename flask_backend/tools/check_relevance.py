@@ -6,9 +6,14 @@ asıl soru başka — *gerçek* sonuçlarda doğru ürünler ana listeye çıkı
 Kaynak katalogunu değiştirdiğinde ya da sıralama kuralına dokunduğumuzda bunu
 gözle kontrol etmek güvenilir değil; ölçülebilir olması lazım.
 
-Beklentiler `relevance_cases.json` içinde durur: her sorgu için ana listede
-bulunması ve bulunmaması gereken ürün adı parçaları. Bir kural değişikliğinden
-sonra bunu çalıştır — kaç beklentinin tuttuğunu ve neyin kaydığını söyler.
+Beklentiler `relevance_cases.json` içinde durur, sorgu başına üç tür:
+
+    head     ana listede bulunmalı
+    notHead  ana listede bulunmamalı (ilgili bölümüne düşmeli)
+    any      sonuçlarda görünmesi yeter, katmanı önemli değil
+
+Bir kural değişikliğinden sonra bunu çalıştır — kaç beklentinin tuttuğunu ve
+neyin kaydığını söyler.
 
 Kullanım (flask_backend/ dizininden):
 
@@ -80,6 +85,15 @@ def _evaluate(case: dict) -> dict:
         if any(_contains(name, needle) for name in head):
             failures.append(("notHead", needle, "ANA"))
 
+    # "any": sonuçlarda görünmesi yeter, hangi katmanda olduğu önemli değil.
+    # Katalog terimi bir ürün adı değil de niteleyici bir ifadeyse ("tıraş
+    # sonrası kolonya"nın başı "kolonya"dır) baş isim modeli ana liste
+    # üretemiyor; istemci de ana liste boşken hepsini düz gösteriyor. Böyle
+    # sorgularda doğru ölçüt ürünün bulunabilmesidir.
+    for needle in case.get("any", []):
+        if not any(_contains(name, needle) for name in head + related):
+            failures.append(("any", needle, "SONUÇ YOK"))
+
     return {
         "query": query,
         "groups": len(groups),
@@ -111,7 +125,11 @@ def main() -> int:
         result = _evaluate(case)
         total_head += len(result["head"])
         total_related += len(result["related"])
-        expectations = len(case.get("head", [])) + len(case.get("notHead", []))
+        expectations = (
+            len(case.get("head", []))
+            + len(case.get("notHead", []))
+            + len(case.get("any", []))
+        )
         checked += expectations
         passed += expectations - len(result["failures"])
 
@@ -124,6 +142,8 @@ def main() -> int:
         for kind, needle, where in result["failures"]:
             if kind == "head":
                 print(f"       ✗ '{needle}' ana listede olmalıydı → {where}")
+            elif kind == "any":
+                print(f"       ✗ '{needle}' sonuçlarda hiç yok")
             else:
                 print(f"       ✗ '{needle}' ana listede OLMAMALIYDI")
             broken.append((result["query"], kind, needle, where))
