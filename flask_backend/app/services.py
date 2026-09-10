@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 
-from app import cache, db, registry, validation
+from app import cache, db, registry, synonyms, validation
 from app.models import Item
 from app.sources import BARCODE_SOURCE, NATIONAL_SOURCE, BarcodeProduct
 from config import Config
@@ -52,12 +52,17 @@ def _national_cached(city: str, name: str) -> tuple[list[Item], str | None]:
     aynı zincirin fiyatı şehirden şehre değişebiliyor; eski şehirden bağımsız
     anahtar yanlış sonuç verirdi. Fiyatlar ve güncelleme zamanı aynı girdide
     tutulur — `search()` ile `national_updated_at()` tek çekimi paylaşır.
+
+    Sorgu kataloğun terimine çevrilerek kullanılır (bkz. `app.synonyms`): hem
+    kaynağa doğru kelime gitsin, hem "çöp poşeti" ile "çöp torbası" aynı
+    önbellek girdisini paylaşsın — ikisi de aynı isteği üretiyor.
     """
-    key = f"national:{registry.city_key(city)}:{name.strip().lower()}"
+    term = synonyms.canonical(name)
+    key = f"national:{registry.city_key(city)}:{term.strip().lower()}"
     return cache.get_or_set(
         key,
         ttl=Config.SEARCH_CACHE_TTL,
-        producer=lambda: _fetch_national(city, name),
+        producer=lambda: _fetch_national(city, term),
     )
 
 

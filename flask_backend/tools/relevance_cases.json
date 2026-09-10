@@ -102,6 +102,36 @@
       "query": "peçete",
       "head": ["peçete"],
       "notHead": []
+    },
+    {
+      "query": "çöp poşeti",
+      "head": ["çöp torbası"],
+      "notHead": []
+    },
+    {
+      "query": "jilet",
+      "head": ["tıraş bıçağı"],
+      "notHead": []
+    },
+    {
+      "query": "ağartıcı",
+      "head": ["çamaşır suyu"],
+      "notHead": []
+    },
+    {
+      "query": "hıyar",
+      "head": ["salatalık"],
+      "notHead": []
+    },
+    {
+      "query": "meşrubat",
+      "head": ["gazlı içecek"],
+      "notHead": []
+    },
+    {
+      "query": "kesme şeker",
+      "head": ["küp şeker"],
+      "notHead": []
     }
   ]
 }

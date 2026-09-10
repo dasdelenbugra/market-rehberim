@@ -36,9 +36,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ["USE_MOCK"] = "false"
 os.environ["MOCK_FALLBACK"] = "false"
 
-from app import products, registry  # noqa: E402
-from app.sources import NATIONAL_SOURCE  # noqa: E402
+from app import create_app, products  # noqa: E402
 from app.text import fold  # noqa: E402
+
+# Ölçüm, istemcinin gerçekten çağırdığı rotadan geçer. Kaynağı doğrudan
+# çağırmak daha basit olurdu ama `services` katmanındaki eş anlamlı çevirisini
+# atlardı: "çöp poşeti" araması uygulamada çalışırken ölçümde sıfır görünüyordu.
+# Araç, ürünün izlediği yoldan başka bir yolu ölçerse ölçüm değersizdir.
+_CLIENT = create_app().test_client()
 
 CASES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "relevance_cases.json")
 CITY = "istanbul"
@@ -56,9 +61,8 @@ def _contains(haystack: str, needle: str) -> bool:
 def _evaluate(case: dict) -> dict:
     """Tek sorguyu çalıştırır ve beklentileri kontrol eder."""
     query = case["query"]
-    latitude, longitude = registry.coords_for(CITY)
-    items, _ = NATIONAL_SOURCE.fetch_with_meta(query, latitude, longitude)
-    groups = products.group(items, query)
+    response = _CLIENT.get(f"/products/{CITY}/{query}")
+    groups = response.get_json() or []
 
     head = [g["name"] for g in groups if g["relevance"] == products.RELEVANCE_HEAD]
     related = [g["name"] for g in groups if g["relevance"] != products.RELEVANCE_HEAD]
