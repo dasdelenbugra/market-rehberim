@@ -18,11 +18,20 @@ arama yapıyor. "mandal" 47 sonuç döndürüyor ama ürünler "**Manda** Sütl�
 Yoğurt"; "güve" ketçaba, "bardak" çay poşetine düşüyor. Yeni bir eşleşme
 eklerken sayıya değil dönen ürün adlarına bakın.
 
-Kapsam dışı bilinen sınır: eşleşme **tüm sorguya** bakar, parçasına değil.
-"büyük çöp poşeti" yazan kullanıcı hâlâ boş sonuç alır. Parça değiştirme
-denenmedi çünkü kısa terimler ("jilet") başka kelimelerin içinde geçip
-sorguyu sessizce bozabilir; ölçülmemiş bir kural eklemektense dar kalmak
-yeğ. Ölçüm: `tools/check_relevance.py`.
+Eşleşme sorgunun tamamına değil, içindeki **kelime dizisine** bakar: "büyük çöp
+poşeti" → "büyük çöp torbası". Harf dizisi değil kelime dizisi aranır, böylece
+kısa bir terim başka kelimenin içinde tesadüfen yakalanmaz.
+
+Bu genişletme ölçülerek eklendi ve ölçüm beklentiyi çürüttü. Tek kelimelik bir
+anahtarın sorgu içinde değişmesi bozuk bir ifade üretiyor — "jilet bıçağı" →
+"tıraş bıçağı bıçağı" — ve bunun sonucu bozacağı varsayılmıştı. Kaynak bulanık
+arama yaptığı için sorun çıkmıyor: o sorgu 0 yerine 57 jilet döndürüyor.
+Denenen dokuz kısmi sorgunun hiçbiri kötüleşmedi, dördü sıfırdan kurtuldu.
+
+Kaynak sorgu kelimelerini ANDliyor gibi görünüyor: "çamaşır suyu" 94 sonuç
+verirken "sıvı çamaşır suyu" sıfır veriyor. Yani fazladan kelime eklemek daralt
+ıyor; çevirinin kazancı da bu yüzden yalnız tanınmayan kelimeyi düzeltmekten
+geliyor. Ölçüm: `tools/check_relevance.py`.
 
 Bilerek eklenmeyenler — sıfır sonuç veriyorlar ama eş anlamlı sorunu değiller,
 market o ürünü gerçekten taşımıyor: pırasa, naftalin, fondöten, göz kremi,
@@ -65,23 +74,55 @@ _SYNONYMS_RAW = {
     "tıraş losyonu": "tıraş sonrası",                    # 1 -> 5
 }
 
-#: Arama anahtarı `fold`'lanmış hâlidir: büyük/küçük harf, Türkçe karakter ve
-#: boşluk farkları eşleşmeyi kaçırmasın ("Çöp Poşeti" = "cop poseti").
-_SYNONYMS = {fold(user_term): catalogue_term for user_term, catalogue_term in _SYNONYMS_RAW.items()}
+def _tokenize(raw: str) -> list[str]:
+    """Sorguyu karşılaştırılabilir kelimelere ayırır.
+
+    Her kelime ayrı ayrı `fold`'lanır: büyük/küçük harf ve Türkçe karakter
+    farkları eşleşmeyi kaçırmasın ("Çöp Poşeti" = "cop poseti"). Tüm dizgiyi
+    tek anahtara ezmek yerine kelime sınırları korunur — kelime dizisi araması
+    buna dayanıyor.
+    """
+    return [folded for folded in (fold(part) for part in raw.split()) if folded]
+
+
+#: Anahtar, terimin kelime dizisi ("çöp poşeti" -> ("cop", "poseti")).
+_SYNONYM_RUNS = {
+    tuple(_tokenize(user_term)): catalogue_term
+    for user_term, catalogue_term in _SYNONYMS_RAW.items()
+}
+_LONGEST_RUN = max(len(run) for run in _SYNONYM_RUNS)
 
 
 def canonical(query: str) -> str:
-    """Sorguyu katalogun tanıdığı terime çevirir; karşılığı yoksa olduğu gibi döner.
+    """Sorgudaki bilinen terimi katalogun terimiyle değiştirir.
 
-    Idempotenttir: hedef terimlerin kendisi haritada anahtar değil, bu yüzden
-    iki kez uygulamak zarar vermez. Sorgu hem kaynağa giderken hem alaka
-    hesaplanırken çevrildiği için bu önemli.
+    Sorgunun tamamı değil, içindeki kelime dizisi aranır; en uzun eşleşme
+    kazanır ki "bulaşık makinesi deterjanı" tek kelimelik bir anahtara
+    bölünmesin.
+
+    Idempotenttir: hiçbir hedef terim başka bir anahtarın kelime dizisini
+    içermez. Sorgu hem kaynağa giderken hem alaka hesaplanırken çevrildiği
+    için bu şart.
 
     >>> canonical("Çöp Poşeti")
     'çöp torbası'
+    >>> canonical("büyük çöp poşeti")
+    'büyük çöp torbası'
     >>> canonical("makarna")
     'makarna'
     """
     if not query:
         return query
-    return _SYNONYMS.get(fold(query), query)
+
+    words = query.split()
+    folded = [fold(word) for word in words]
+
+    for span in range(min(_LONGEST_RUN, len(words)), 0, -1):
+        for start in range(len(words) - span + 1):
+            run = folded[start:start + span]
+            if not all(run):  # noktalama gibi boş katkılar diziyi bozmasın
+                continue
+            replacement = _SYNONYM_RUNS.get(tuple(run))
+            if replacement:
+                return " ".join(words[:start] + [replacement] + words[start + span:])
+    return query

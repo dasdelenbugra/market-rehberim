@@ -155,6 +155,21 @@
       "query": "after shave",
       "head": ["tıraş sonrası kolonya", "tıraş sonrası losyon"],
       "notHead": []
+    },
+    {
+      "query": "büyük çöp poşeti",
+      "head": ["çöp torbası"],
+      "notHead": []
+    },
+    {
+      "query": "jilet bıçağı",
+      "head": ["tıraş bıçağı"],
+      "notHead": []
+    },
+    {
+      "query": "lavabo tıkanıklık açıcı",
+      "head": ["lavabo açıcı"],
+      "notHead": []
     }
   ]
 }

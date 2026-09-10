@@ -47,6 +47,35 @@ def test_unknown_term_passes_through():
     assert synonyms.canonical("") == ""
 
 
+@pytest.mark.parametrize(
+    "typed,expected",
+    [
+        ("büyük çöp poşeti", "büyük çöp torbası"),
+        ("battal boy çöp poşeti", "battal boy çöp torbası"),
+        ("lavabo tıkanıklık açıcı", "lavabo lavabo açıcı"),
+        ("hıyar turşusu", "salatalık turşusu"),
+    ],
+)
+def test_term_inside_a_longer_query_is_translated(typed, expected):
+    """Terim sorgunun tamamı olmasa da çevrilmeli.
+
+    "büyük çöp poşeti" ölçümde sıfır sonuç veriyordu; çevrildiğinde 22.
+    "lavabo lavabo açıcı" bozuk görünüyor ama kaynak bulanık aradığı için
+    13 sonuç döndürüyor — ölçüm, tekrarın zarar vermediğini gösterdi.
+    """
+    assert synonyms.canonical(typed) == expected
+
+
+def test_longest_match_wins():
+    """Uzun terim kısa anahtara bölünmemeli."""
+    assert synonyms.canonical("bulaşık makinesi deterjanı") == "bulaşık makinesi tableti"
+
+
+def test_only_the_known_run_is_replaced():
+    """Sorgunun geri kalanı korunmalı; çeviri kelimeyi silmemeli."""
+    assert synonyms.canonical("kalın çöp poşeti 50 adet") == "kalın çöp torbası 50 adet"
+
+
 def test_matching_ignores_case_and_turkish_letters():
     """"Çöp Poşeti" ile "cop poseti" aynı sorgudur; eşleşme kaçmamalı."""
     assert synonyms.canonical("Çöp Poşeti") == "çöp torbası"
