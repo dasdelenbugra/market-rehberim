@@ -74,6 +74,16 @@ _SYNONYMS_RAW = {
     "tıraş losyonu": "tıraş sonrası",                    # 1 -> 5
 }
 
+def catalogue_terms() -> tuple[str, ...]:
+    """Kataloğun kullandığı, doğruluğu ölçülmüş terimler.
+
+    `app.suggest` bunları kelime dağarcığına tohum olarak katıyor: ilk kurulumda
+    `price_history` boş olduğu için dağarcık da boş kalır ve öneri mekanizması
+    hiç çalışmazdı.
+    """
+    return tuple(_SYNONYMS_RAW.values())
+
+
 def _tokenize(raw: str) -> list[str]:
     """Sorguyu karşılaştırılabilir kelimelere ayırır.
 

@@ -13,6 +13,22 @@ _TR_FOLD = str.maketrans(
 )
 
 
+#: Türkçe küçük harf çevirisi. `str.lower()` tek başına yetmiyor: "İ" için
+#: birleşik bir karakter ("i" + U+0307), "I" için de "i" üretiyor — oysa
+#: Türkçe'de "I"nın küçüğü "ı"dır. Gösterime giren metinlerde bu fark görünür
+#: ("İçim" -> "i̇çim" gibi bozuk bir çıktı).
+_TR_LOWER = str.maketrans("İI", "iı")
+
+
+def lower_tr(raw: str) -> str:
+    """Türkçe kurallarına göre küçük harfe çevirir.
+
+    `fold`'dan farkı: harfleri ASCII'ye indirmez, kelimeyi okunur bırakır.
+    Karşılaştırma için `fold`, kullanıcıya gösterim için bu kullanılır.
+    """
+    return raw.translate(_TR_LOWER).lower()
+
+
 def fold(raw: str) -> str:
     """Karşılaştırma anahtarı üretir: 'Migros Ticaret A.Ş.' → 'migrosticaretas'.
 

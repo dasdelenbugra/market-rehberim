@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from app import cache, db, products as products_mod, services, validation
+from app import cache, db, products as products_mod, services, suggest, validation
 from app import registry
 from app.scrapers import SCRAPERS
 from app.sources import openfoodfacts
@@ -76,10 +76,21 @@ def products(city: str, item_name: str):
     Arama ekranı ise gruplu görünüme ihtiyaç duyuyor — gerekçe: `app.products`.
     """
     items = services.search(city, item_name)
-    response = jsonify(products_mod.group(items, item_name))
+    groups = products_mod.group(items, item_name)
+    response = jsonify(groups)
+
     updated_at = services.national_updated_at(city, item_name)
     if updated_at:
         response.headers["X-Data-Updated"] = updated_at
+
+    # "Bunu mu demek istediniz" — yalnız sonuç boşken hesaplanır: dolu bir
+    # listede öneri hem gereksiz hem de kafa karıştırıcı olurdu. Zaman damgası
+    # gibi başlıkla taşınıyor, gövde şeması (grup dizisi) sabit sözleşme.
+    if not groups:
+        suggestion = suggest.closest(item_name)
+        if suggestion:
+            response.headers["X-Search-Suggestion"] = suggestion
+
     return response
 
 

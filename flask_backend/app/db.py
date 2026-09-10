@@ -190,6 +190,21 @@ def search_gaps(limit: int = 50) -> list[dict]:
         return [dict(r) for r in rows]
 
 
+def distinct_product_names(limit: int = 5000) -> list[str]:
+    """Şimdiye kadar görülmüş farklı ürün adları.
+
+    `price_history` her aramada kaynaktan geleni işlediği için katalogun
+    kullandığı gerçek adların birikmiş hâlini tutuyor. `app.suggest` bunu
+    kelime dağarcığı olarak kullanıyor — ayrı bir sözlük tutmaya gerek yok,
+    korpus uygulama kullanıldıkça kendiliğinden büyüyor.
+    """
+    with _lock, _conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT name FROM price_history LIMIT ?", (limit,)
+        ).fetchall()
+        return [r["name"] for r in rows if r["name"]]
+
+
 def clear_search_gaps() -> None:
     """Boşluk sayaçlarını sıfırlar.
 
