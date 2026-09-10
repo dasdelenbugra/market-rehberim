@@ -1,0 +1,45 @@
+# Her gönderimde çalışan hızlı kontrol.
+#
+# Buraya yalnız ağ istemeyen, sonucu belirlenimci testler girer. Canlı kaynağa
+# giden ölçüm ayrı bir workflow'da (relevance.yml) ve haftalık çalışır: her
+# push'ta dış bir servise 33 istek atmak hem başkasının kaynağını yakar hem de
+# kod sağlamken kaynak takıldığında kırmızı yanar. Sık sık haksız yere kırmızı
+# yanan bir CI'a insan bakmayı bırakır; o da CI'ı olmamış hâle getirir.
+name: testler
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Geliştirme makinesi 3.9 kullanıyor; 3.12 ise sürüm kayması olduğunda
+      # (yalnız yeni sürümde çalışan bir söz dizimi girdiğinde) haber verir.
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+
+    defaults:
+      run:
+        working-directory: flask_backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: flask_backend/requirements.txt
+
+      - name: Bağımlılıkları kur
+        run: pip install -r requirements.txt
+
+      - name: Testler
+        # Testler mock veriyle ve geçici bir veritabanıyla çalışır; ortam
+        # değişkenlerini tests/conftest.py kendi ayarlıyor, burada tekrar
+        # edilmemeli — iki yerde durursa biri kayar.
+        run: python -m pytest -q

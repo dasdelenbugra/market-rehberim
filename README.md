@@ -1,5 +1,8 @@
 # 🛒 Market Rehberim
 
+[![testler](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/tests.yml/badge.svg)](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/tests.yml)
+[![alaka ölçümü](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/relevance.yml/badge.svg)](https://github.com/dasdelenbugra/market-rehberim/actions/workflows/relevance.yml)
+
 **Market Rehberim**, yerel odaklı bir **market fiyat karşılaştırma ve alışveriş
 asistanı** uygulamasıdır. Aynı ürünü ulusal marketlerde (Migros, A101, ŞOK,
 CarrefourSA) **ve** şehrinizdeki yerel marketlerde karşılaştırır, en ucuzunu bulur.
@@ -114,9 +117,33 @@ Splash Screen API
 
 ## 🧪 Testler
 ```powershell
-cd flask_backend && pytest -q      # Backend (16 test: API + önbellek)
+cd flask_backend && pytest -q      # Backend (139 test)
 ./gradlew testDebugUnitTest        # Android birim (26 test)
 ```
+
+### Canlı ölçüm
+
+Birim testler ayrıştırıcıyı sabit veriyle doğrular; asıl soruyu cevaplamazlar:
+*gerçek katalogda doğru ürünler ana listeye çıkıyor mu?* Onun için ayrı araçlar
+var (ağa çıkarlar, bu yüzden birim testlerden ayrı dururlar):
+
+```powershell
+cd flask_backend
+python tools/check_relevance.py    # 33 sorgu, 64 beklenti — sıralama ölçümü
+python tools/search_gaps.py        # sonuçsuz aramalar — eş anlamlı adayları
+python tools/check_marketfiyati.py süt --city istanbul   # kaynak şeması
+```
+
+### CI
+
+| Workflow | Ne zaman | Neden |
+|----------|----------|-------|
+| [`tests.yml`](.github/workflows/tests.yml) | Her push / PR | Hızlı, ağ istemez; Python 3.9 + 3.12 |
+| [`relevance.yml`](.github/workflows/relevance.yml) | Haftalık + elle | *"Kaynak değişti mi?"* sorusunu izler |
+
+Alaka ölçümü bilerek her push'ta çalışmıyor: canlı kaynağa istek atıyor, kod
+sağlamken kaynak takıldığında kırmızı yanardı. Sık sık haksız yere kırmızı yanan
+bir CI'a insan bakmayı bırakır — o da CI'ı olmamış hâle getirir.
 
 Android birim testleri Android bağımlılığı olmayan saf mantığı hedefler:
 `ResultShaper` (filtre + sıralama), `PriceParser` (OCR fiyat ayıklama),
