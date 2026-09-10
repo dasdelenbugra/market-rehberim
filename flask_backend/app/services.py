@@ -112,7 +112,26 @@ def search(city: str, name: str) -> list[Item]:
         )
 
     results.sort(key=lambda it: float(it.price))
+    _note_if_unanswered(name, len(results))
     return results
+
+
+def _note_if_unanswered(name: str, found: int) -> None:
+    """Sonuçsuz aramayı sayar; eş anlamlı sözlüğünün besleyicisi budur.
+
+    Kullanıcının **yazdığı** terim kaydedilir, çevrilmiş hali değil: aranan
+    şey zaten kataloğun tanımadığı kelimeler. Çeviri tuttuysa sonuç dolu gelir
+    ve buraya hiç düşmez, dolayısıyla kayıtta kalanlar gerçek boşluklardır.
+
+    Hata yutulur: kayıt yan iş, başarısız olması aramayı düşürmemeli — aynı
+    gerekçe `_record_history` için de geçerli.
+    """
+    if not Config.LOG_SEARCH_GAPS or found >= Config.SEARCH_GAP_THRESHOLD:
+        return
+    try:
+        db.record_search_gap(name, found)
+    except Exception:  # noqa: BLE001 - ölçüm aramayı bloklamamalı
+        pass
 
 
 def resolve_barcode(barcode: str) -> BarcodeProduct | None:

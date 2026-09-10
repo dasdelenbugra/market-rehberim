@@ -61,6 +61,19 @@ def init_db() -> None:
             -- böylece tekilleştirme için ayrıca SELECT atmaya gerek kalmaz.
             CREATE UNIQUE INDEX IF NOT EXISTS idx_history_daily
                 ON price_history(market, name, date(created));
+
+            -- Sonuçsuz kalan aramalar. Eş anlamlı sözlüğünü (app/synonyms.py)
+            -- tahmin listesiyle değil gerçek kullanımla beslemek için.
+            -- Olay olay değil terim başına sayaç tutulur: tablo sınırlı büyür,
+            -- istenen zaten sıklık, ve kimin ne aradığı hiç kaydedilmez.
+            CREATE TABLE IF NOT EXISTS search_gaps (
+                term_key   TEXT PRIMARY KEY,
+                term       TEXT NOT NULL,
+                results    INTEGER NOT NULL,
+                hits       INTEGER NOT NULL DEFAULT 1,
+                first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+                last_seen  TEXT NOT NULL DEFAULT (datetime('now'))
+            );
             """
         )
 
@@ -126,6 +139,66 @@ def price_history(market: str, name: str, limit: int = 50) -> list[dict]:
             (market.strip(), name.strip(), limit),
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+#: Aşırı uzun girdiler tabloyu şişirmesin; gerçek arama terimi bu sınırın altında.
+_MAX_TERM_LEN = 80
+
+
+def record_search_gap(term: str, results: int) -> None:
+    """Sonuç bulamayan bir aramayı sayar.
+
+    Kaydedilen: terimin kendisi, kaç sonuç döndüğü ve kaç kez arandığı.
+    Kaydedilmeyen: kim aradığı, ne zaman aradığı (yalnız ilk/son görülme
+    tarihi), hangi cihazdan geldiği. Amaç bir kullanıcıyı değil, kataloğun
+    kör noktasını takip etmek.
+
+    Şehir bilerek tutulmuyor: eş anlamlı boşluğu kelime dağarcığı sorunu,
+    şehirden bağımsız. Şehir eklemek satırları böler ve sıklığı gizlerdi.
+    """
+    cleaned = " ".join(term.split())[:_MAX_TERM_LEN]
+    key = fold(cleaned)
+    if not key:
+        return
+
+    with _lock, _conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO search_gaps(term_key, term, results)
+            VALUES(?,?,?)
+            ON CONFLICT(term_key) DO UPDATE SET
+                hits      = hits + 1,
+                results   = excluded.results,
+                last_seen = datetime('now')
+            """,
+            (key, cleaned, int(results)),
+        )
+
+
+def search_gaps(limit: int = 50) -> list[dict]:
+    """En çok aranıp en az sonuç veren terimler — yeni eş anlamlı adayları."""
+    with _lock, _conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT term, term_key, results, hits, first_seen, last_seen
+            FROM search_gaps
+            ORDER BY hits DESC, results ASC, last_seen DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def clear_search_gaps() -> None:
+    """Boşluk sayaçlarını sıfırlar.
+
+    Sözlüğe yeni eşleşmeler eklendikten sonra çalıştırılır: eski sayaçlar
+    kalırsa çözülmüş terimler listenin başında durmaya devam eder ve yeni
+    sinyali gizler.
+    """
+    with _lock, _conn() as conn:
+        conn.execute("DELETE FROM search_gaps")
 
 
 def record_daily_prices(rows: list[tuple[str, str, float]]) -> None:

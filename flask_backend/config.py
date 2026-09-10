@@ -64,6 +64,16 @@ class Config:
     # bindirilen yük arasında makul bir denge (eski varsayılan 15 dk gereksizdi).
     SEARCH_CACHE_TTL = float(os.getenv("SEARCH_CACHE_TTL", "21600"))
 
+    # --- Arama boşluğu kaydı ---------------------------------------------
+    # Sonuçsuz kalan aramalar sayılır; eş anlamlı sözlüğü (app/synonyms.py)
+    # böylece tahminle değil gerçek kullanımla beslenir. Rapor:
+    #   python tools/search_gaps.py
+    # Kimlik bilgisi tutulmaz, yalnız terim ve sayaç — bkz. db.record_search_gap.
+    LOG_SEARCH_GAPS = _as_bool(os.getenv("LOG_SEARCH_GAPS"), default=True)
+    # Bu sayıdan az sonuç dönen arama "boşluk" sayılır. Sıfır en net sinyal ama
+    # tek tük sonuç da çoğu zaman yanlış terim demek ("hıyar" 1 sonuç veriyordu).
+    SEARCH_GAP_THRESHOLD = int(os.getenv("SEARCH_GAP_THRESHOLD", "3"))
+
     # HTTP ayarları
     REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "10"))
     # Kamuya açık API'ye kendimizi tanıtarak gideriz; tarayıcı taklidi yapmayız.

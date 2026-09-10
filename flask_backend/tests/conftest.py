@@ -26,3 +26,17 @@ def client():
     app = create_app()
     app.config.update(TESTING=True)
     return app.test_client()
+
+
+@pytest.fixture()
+def tmp_db():
+    """Boş bir `search_gaps` tablosuyla başlatır.
+
+    Bu testler tablonun tamamına bakıyor (kaç satır, hangi sırada); başka bir
+    testin bıraktığı kayıt sonucu sessizce değiştirirdi.
+    """
+    from app import db
+
+    db.init_db()
+    db.clear_search_gaps()
+    return db
