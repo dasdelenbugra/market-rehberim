@@ -7,7 +7,8 @@
 **Market Rehberim**, yerel odaklı bir **market fiyat karşılaştırma ve alışveriş
 asistanı** uygulamasıdır. Aynı ürünü yedi ulusal zincirde (A101, BİM, CarrefourSA,
 Hakmar, Migros, Tarım Kredi, ŞOK) **ve** şehrinizdeki yerel marketlerde
-karşılaştırır, en ucuzunu bulur. 81 il desteklenir.
+karşılaştırır, en ucuzunu bulur. Ulusal zincirler 81 ilde sorgulanır; yerel
+market kapsamı şehre göre değişir.
 
 > Akakçe/Cimri'den farkı: **yerel/şehir bazlı odak**, **sepet optimizasyonu**,
 > **crowdsourced (topluluk katkılı) fiyat** ve **kamera ile ürün/barkod tanıma**.
@@ -29,7 +30,7 @@ karşılaştırır, en ucuzunu bulur. 81 il desteklenir.
 | 🛒 **Sepet optimizasyonu** | Liste → her marketin toplamı **+** ürün bazlı en ucuz dağıtım |
 | 📸 **Crowdsourced fiyat (OCR)** | Raf etiketi fotoğrafı → ML Kit metin tanıma → fiyat gönder |
 | 🕒 **Son güncelleme** | Fiyatın ne kadar taze olduğu açıkça yazılır; "anlık" vaadi verilmez |
-| 🏙️ **81 il** | Şehir seçimi yerel market kapsamını ve şube konumunu belirler |
+| 🏙️ **Şehir seçimi** | 81 ilin koordinatı — ulusal zincir sorgusu her ilde çalışır; yerel market listesi 16 şehirde dolu |
 | ⭐ **Favoriler + geçmiş** | Room ile yerel kalıcılık; anasayfada gösterim |
 | 📉 **Fiyat geçmişi** | Kütüphanesiz özel çizgi grafik (`LineChartView`) |
 | 🔔 **Fiyat düşüşü bildirimi** | WorkManager ile günlük takip; favori ucuzlayınca bildirim |
@@ -292,7 +293,7 @@ MarketRehberim/
 - [x] Eş anlamlı sözlüğü + yazım önerisi
 - [x] Sürekli entegrasyon (backend · Android · haftalık canlı ölçüm)
 - [x] Barkod tarama (Open Food Facts)
-- [x] 81 il desteği
+- [x] 81 il şehir seçimi (ulusal zincir sorgusu; yerel market listesi 16 şehir)
 - [ ] Kalıcı veritabanı (PostgreSQL) — Render'ın diski kalıcı olmadığı için
       crowdsourced veri yeniden deploy'da siliniyor
 - [ ] Eş anlamlı sözlüğünü gerçek kullanım verisiyle beslemek

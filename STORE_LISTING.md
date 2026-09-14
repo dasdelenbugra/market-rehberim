@@ -9,8 +9,10 @@ Market Rehberim — Fiyat Karşılaştır
 ## Tam açıklama
 **Market Rehberim ile alışverişte cebinizde kalsın!**
 
-Aynı ürünü Migros, A101, ŞOK, CarrefourSA ve şehrinizdeki yerel marketlerde
-karşılaştırın; en ucuzunu saniyeler içinde bulun.
+Aynı ürünü yedi ulusal zincirde (A101, BİM, CarrefourSA, Hakmar, Migros,
+Tarım Kredi, ŞOK) ve şehrinizdeki yerel marketlerde karşılaştırın; en ucuzunu
+saniyeler içinde bulun. Her zincir her ilde bulunmaz — size şubesi olan
+marketlerin fiyatları gösterilir.
 
 🔍 **Akıllı arama**
 Ürün adını yazın; tüm marketlerdeki fiyatlar tek listede, ucuzdan pahalıya sıralanır.
@@ -24,13 +26,22 @@ veya isme göre sıralayın.
 Alışveriş listenizi girin; hangi markette toplam kaç para tuttuğunu görün, her ürünü
 en ucuz aldığınız "optimal dağıtım" ile en fazla tasarrufu yakalayın.
 
-🏙️ **Yerel marketler**
+🏙️ **Yerel marketler (topluluk katkısıyla)**
 Akakçe/Cimri'nin göremediği şehrinizdeki yerel marketleri de karşılaştırın. Web sitesi
 olmayan marketlerin fiyatlarını topluluk paylaşır: raf etiketini fotoğraflayın,
 fiyat otomatik okunup eklensin.
 
+Bu fiyatlar kullanıcı katkısıyla oluşur: yerel market kapsamı şehre göre değişir ve
+henüz kimsenin fiyat bildirmediği bir markette sonuç çıkmayabilir. Siz bildirdikçe
+şehrinizin kapsamı büyür. Zincir market fiyatları ise resmî kaynaktan gelir ve
+günlük tazelenir.
+
 📉 **Fiyat geçmişi & favoriler**
 Ürünlerin fiyat değişimini grafikle takip edin, favorilerinizi kaydedin.
+
+Her fiyatın yanında son güncelleme zamanı yazar — "anlık fiyat" vaat etmiyoruz,
+verinin ne kadar taze olduğunu dürüstçe gösteriyoruz. Markette gördüğünüz etiket
+her zaman esastır.
 
 Reklam yok, üyelik yok, gizli veri toplama yok. Sadece tasarruf.
 
