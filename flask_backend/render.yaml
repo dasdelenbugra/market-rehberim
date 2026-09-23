@@ -1,5 +1,10 @@
 # Render.com tek tıkla deploy yapılandırması.
 # https://render.com → New → Blueprint → bu repoyu seç.
+#
+# Bu dosya "altyapı koddur" (infrastructure as code): sunucunun nasıl
+# kurulacağı panelde tıklanarak değil, repoda yazılı durur. Faydası, kurulumun
+# tekrar edilebilir ve gözden geçirilebilir olması — panelde yapılan bir ayarı
+# altı ay sonra kimse hatırlamaz, buradaki satır ise commit geçmişinde durur.
 services:
   - type: web
     name: market-rehberim-backend
@@ -7,11 +12,48 @@ services:
     rootDir: flask_backend
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+    # --workers 1 --threads 4: TEK süreç, çoklu thread.
+    #
+    # Sebep `app/cache.py`: önbellek süreç içi bir sözlük. Her worker ayrı bir
+    # süreç, yani ayrı bir bellek — iki worker demek iki ayrı önbellek, aynı
+    # aramanın kaynağa iki kez gitmesi ve isabet oranının yarılanması demek.
+    # Thread'ler ise belleği paylaşır, önbellek tek kalır. Kod buna uygun:
+    # cache.py ve db.py erişimlerini threading.Lock ile koruyor.
+    #
+    # Ücretsiz katmanın 512 MB belleği de tek süreci tercih ettiriyor.
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+
+    # Render buraya istek atıp servisin ayakta olduğunu anlar. Yoksa çöken bir
+    # süreci fark etmesi gecikir.
+    healthCheckPath: /health
+
     envVars:
+      # KRİTİK: false olmalı. true bırakılırsa uygulama uydurma fiyatlar
+      # gösterir ve bunu kullanıcıya belli etmez — gerçek fiyat karşılaştırma
+      # uygulamasında yapılabilecek en zararlı hata budur.
+      # (Yerelde .env ile yönetiliyor ama .env git'e girmez; Render yalnız
+      # buradaki değerleri görür.)
       - key: USE_MOCK
-        value: "true"
+        value: "false"
+
+      # Kaynak çökerse örnek veriye DÜŞME. Boş ekran dürüsttür; gerçekmiş gibi
+      # görünen uydurma fiyat değildir.
       - key: MOCK_FALLBACK
-        value: "true"
+        value: "false"
+
+      # Doğrudan scraping emekli. Üretimde asla açılmamalı — gerekçe:
+      # docs/VERI_KAYNAGI.md
+      - key: ENABLE_LEGACY_SCRAPERS
+        value: "false"
+
+      - key: DEBUG
+        value: "false"
+
+      # Kaynak günlük tazeleniyor; 6 saat tazelik ile kaynağa binen yük
+      # arasında makul denge.
+      - key: SEARCH_CACHE_TTL
+        value: "21600"
+
       - key: PYTHON_VERSION
         value: "3.12.4"

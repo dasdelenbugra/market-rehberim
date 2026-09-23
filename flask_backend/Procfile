@@ -1,1 +1,5 @@
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+# render.yaml varken Render bu dosyayı kullanmaz; Heroku benzeri platformlar ve
+# elle çalıştırma için burada duruyor. İkisi ayrışırsa ileride hangisinin
+# geçerli olduğu karışır, bu yüzden startCommand ile aynı tutulur.
+# Gerekçeler (tek worker + thread, timeout) için bkz. render.yaml.
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
