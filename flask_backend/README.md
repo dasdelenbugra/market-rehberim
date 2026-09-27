@@ -19,7 +19,7 @@ sonuç döndürür.
 
 ```
 flask_backend/
-├── app.py                # Geliştirme giriş noktası (python app.py)
+├── wsgi.py               # WSGI giriş noktası (python wsgi.py / gunicorn wsgi:app)
 ├── config.py             # Ortam değişkeni tabanlı yapılandırma
 ├── requirements.txt
 ├── Dockerfile
@@ -47,7 +47,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 copy .env.example .env      # ardından .env'i düzenleyin
-python app.py
+python wsgi.py
 ```
 
 Sunucu varsayılan olarak `http://0.0.0.0:5454` üzerinde çalışır.

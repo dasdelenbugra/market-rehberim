@@ -27,7 +27,7 @@ services:
     # cache.py ve db.py erişimlerini threading.Lock ile koruyor.
     #
     # Ücretsiz katmanın 512 MB belleği de tek süreci tercih ettiriyor.
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
 
     # Render buraya istek atıp servisin ayakta olduğunu anlar. Yoksa çöken bir
     # süreci fark etmesi gecikir.

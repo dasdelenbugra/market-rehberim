@@ -9,5 +9,5 @@ COPY . .
 
 EXPOSE 5454
 
-# Not: gunicorn Linux/Docker içindir. Windows'ta doğrudan `python app.py` kullanın.
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5454", "--workers", "2"]
+# Not: gunicorn Linux/Docker içindir. Windows'ta doğrudan `python wsgi.py` kullanın.
+CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:5454", "--workers", "2"]
