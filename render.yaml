@@ -1,6 +1,11 @@
 # Render.com tek tıkla deploy yapılandırması.
 # https://render.com → New → Blueprint → bu repoyu seç.
 #
+# Bu dosya DEPO KÖKÜNDE durmalı: Render blueprint'i varsayılan olarak kökte
+# arar. flask_backend/ içindeyken Blueprint Path alanının elle düzeltilmesi
+# gerekiyordu ve `rootDir`in neye göre çözüleceği de belirsizleşiyordu.
+# Kökte dururken `rootDir: flask_backend` tereddütsüz depo köküne göredir.
+#
 # Bu dosya "altyapı koddur" (infrastructure as code): sunucunun nasıl
 # kurulacağı panelde tıklanarak değil, repoda yazılı durur. Faydası, kurulumun
 # tekrar edilebilir ve gözden geçirilebilir olması — panelde yapılan bir ayarı
