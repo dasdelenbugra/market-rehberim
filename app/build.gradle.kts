@@ -31,11 +31,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Backend adresi. local.properties içindeki `backend.baseUrl` değerinden
-        // okunur; yoksa emülatörün host makineye eriştiği varsayılan adres kullanılır.
-        // (Android emülatöründe 10.0.2.2 = geliştirme makinesinin localhost'u.)
+        // Backend adresi. Varsayılan ÜRETİM sunucusudur: `local.properties`
+        // git'e girmediği için, varsayılan yerel bir adres olsaydı depoyu
+        // klonlayan herkesin (ve yayın derlemesinin) hiçbir yere bağlanamayan
+        // bir uygulama üretmesi gerekirdi. İşleyen yapılandırma commit'lenen
+        // yapılandırma olmalı.
+        //
+        // Yerel geliştirmede `local.properties` ile ezilir:
+        //   backend.baseUrl=http://10.0.2.2:5454/     (emülatör → host makine)
+        //   backend.baseUrl=http://192.168.1.x:5454/  (fiziksel cihaz → aynı Wi-Fi)
+        // Şifresiz (http) adresler için network_security_config.xml'e de
+        // eklenmeleri gerekir; üretim https olduğu için oraya dokunulmaz.
         val backendBaseUrl: String = gradleLocalProperties(rootDir, providers)
-            .getProperty("backend.baseUrl", "http://10.0.2.2:5454/")
+            .getProperty("backend.baseUrl", "https://market-rehberim-backend.onrender.com/")
         buildConfigField("String", "BASE_URL", "\"$backendBaseUrl\"")
     }
 
